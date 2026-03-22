@@ -61,10 +61,6 @@ namespace Engine
                 glGetProgramInfoLog(this->id,512,NULL, this->infoLog);
                 std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << this->infoLog << std::endl;
             }
-
-            for(auto shader: shaders){
-                delete shader;
-            }
         }
 
     }
