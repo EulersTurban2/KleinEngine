@@ -17,7 +17,6 @@ namespace Engine{
                 return WINDOW_STATE::FAILURE;
             }
             glfwMakeContextCurrent(this->window);
-
             glfwSetFramebufferSizeCallback(this->window,Engine::Platform::framebuffer_size_callback);
             // setting up GLAD
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))

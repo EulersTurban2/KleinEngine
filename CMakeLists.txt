@@ -12,6 +12,7 @@ project(KleinEngine)
 add_executable(KleinEngine 
     src/main.cpp
     src/core/window.cpp
+    src/core/shaders.cpp
     external/glad/src/glad.c
 )
 
