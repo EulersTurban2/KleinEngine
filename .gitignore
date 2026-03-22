@@ -8,7 +8,6 @@ install_manifest.txt
 compile_commands.json
 
 # --- Binaries/Executables ---
-# Ignorišemo tvoj glavni program i sve izvršne fajlove
 KleinEngine
 *.exe
 *.out
