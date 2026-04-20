@@ -1,31 +1,85 @@
-# 1. Minimalna verzija (da izbegneš onaj warning)
-cmake_minimum_required(VERSION 3.10)
-
-# 2. Naziv projekta
+cmake_minimum_required(VERSION 3.15)
 project(KleinEngine)
 
-# 3. Pronalaženje eksternih paketa (ako koristiš sistemski GLFW)
-# find_package(glfw3 REQUIRED) 
+# Use C++17 to support std::filesystem as used in the shader logic
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# 4. KREIRANJE TARGETA (Ovo je bio tvoj glavni problem)
-# Ovde navodiš sve .cpp i .c fajlove
-add_executable(KleinEngine 
-    src/main.cpp
-    src/core/window.cpp
-    src/core/shaders.cpp
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+
+# OpenGL
+find_package(OpenGL REQUIRED)
+
+# GLFW3
+find_package(glfw3 REQUIRED)
+
+# GLM (Header-only math library)
+find_package(glm REQUIRED)
+
+# Assimp (Model loading)
+find_package(assimp REQUIRED)
+
+# -----------------------------------------------------------------------------
+# Engine Library
+# -----------------------------------------------------------------------------
+
+# Compiling the core engine components into a static library.
+# Includes the GLAD loader and current implementation files.
+add_library(engine STATIC
+    engine/core/window.cpp
+    engine/renderer/shaders.cpp
+    engine/scene/camera.cpp
     external/glad/src/glad.c
 )
 
-# 5. PODEŠAVANJA ZA TAJ TARGET
-target_include_directories(KleinEngine PRIVATE 
-    include
-    external/glad/include
+# The include structure (e.g., #include <core/window.hpp>) requires 
+# the 'engine/' directory to be a root include path.
+target_include_directories(engine PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
-# 6. LINKOVANJE (OpenGL, GLFW i ostalo)
-# Na Linuxu ti trebaju ove biblioteke
-target_link_libraries(KleinEngine 
-    glfw
-    GL
-    dl
+# Link engine dependencies.
+# Note: ImGui is not in the current tree, but can be added here once integrated.
+target_link_libraries(engine PUBLIC 
+    OpenGL::GL 
+    glfw 
+    glm::glm 
+    assimp::assimp
 )
+
+# Link std::filesystem for older GCC versions if necessary
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 9.0)
+    target_link_libraries(engine PUBLIC stdc++fs)
+endif()
+
+# -----------------------------------------------------------------------------
+# Application Executable
+# -----------------------------------------------------------------------------
+
+# The main application entry point and logic
+add_executable(KleinEngine 
+    app/main.cpp 
+    app/app.cpp
+)
+
+# Include path for the app-layer headers
+target_include_directories(KleinEngine PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/app
+)
+
+# Link the application to the engine module
+target_link_libraries(KleinEngine PRIVATE engine)
+
+# -----------------------------------------------------------------------------
+# Build Configuration
+# -----------------------------------------------------------------------------
+
+# Ensure the executable has access to the resources directory relative to its path.
+# Relative paths in the code (e.g., "../resources/shaders/...") assume the 
+# executable is running from a subfolder like 'build/'.
+if(MSVC)
+    set_target_properties(KleinEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
+endif()

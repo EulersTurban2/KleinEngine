@@ -6,6 +6,7 @@
 #include <sstream>
 #include <vector>
 #include <string.h>
+#include <filesystem>
 #include <glad/glad.h>
 
 namespace Engine
@@ -48,6 +49,10 @@ namespace Engine
 
                 void use() const{
                     glUseProgram(this->id);
+                }
+
+                unsigned int getID() const{
+                    return this->id;
                 }
 
             private:

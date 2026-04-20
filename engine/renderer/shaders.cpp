@@ -1,4 +1,6 @@
-#include <core/shaders.hpp>
+#include "shaders.hpp"
+
+namespace fs = std::filesystem;
 
 namespace Engine
 {
@@ -18,9 +20,8 @@ namespace Engine
                 glGetShaderInfoLog(this->id, 512, NULL, this->infoLog);
                 std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << this->infoLog << std::endl;
             }
-
         }
-
+        
         char* Shader::readShaderSource(const char* shaderPath){
             std::string shaderCode;
             std::ifstream shaderFile;
@@ -32,7 +33,28 @@ namespace Engine
                 std::stringstream shaderStream;
                 shaderStream << shaderFile.rdbuf();
                 shaderFile.close();
-                shaderCode = shaderStream.str();
+                fs::path shaderDir = fs::path(shaderPath).parent_path().parent_path();
+                std::string line;
+                while(std::getline(shaderStream, line)){
+                    if (line.find("#include ") != std::string::npos)
+                    {
+                        int firstChar = line.find("<");
+                        int lastChar = line.find(">");
+                        if(firstChar != std::string::npos && lastChar != std::string::npos && firstChar < lastChar){
+                            std::string includeName = line.substr(firstChar+1,lastChar-firstChar-1);
+                            fs::path importPath = shaderDir / "imports" / includeName.append(".glsl");
+                            char* code = readShaderSource(importPath.c_str());
+                            shaderCode += code;
+                            shaderCode += "\n";
+                            delete[] code;
+                        }else{
+                            std::cout << "ERROR::SHADER::INVALID_INCLUDE_DIR" << std::endl;
+                        }
+                    }else{
+                        shaderCode += line + "\n";        
+                    }
+                    
+                }
             }
             catch (std::ifstream::failure& e)
             {

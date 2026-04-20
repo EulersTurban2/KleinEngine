@@ -3,14 +3,13 @@
 #include <iostream>
 
 
-#include <core/app.hpp>
+#include "app.hpp"
 
 
 int main() {
     std::cout << "Hello, Klein Engine!" << std::endl;
-    
     App::App* app = new App::App();
     app->run();
-    app->~App();
+    delete app;
     return 0;
 }
