@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(KleinEngine)
 
-# Use C++17 to support std::filesystem as used in the shader logic
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -24,9 +23,6 @@ find_package(assimp REQUIRED)
 # -----------------------------------------------------------------------------
 # Engine Library
 # -----------------------------------------------------------------------------
-
-# Compiling the core engine components into a static library.
-# Includes the GLAD loader and current implementation files.
 add_library(engine STATIC
     engine/core/window.cpp
     engine/renderer/shaders.cpp
@@ -34,15 +30,11 @@ add_library(engine STATIC
     external/glad/src/glad.c
 )
 
-# The include structure (e.g., #include <core/window.hpp>) requires 
-# the 'engine/' directory to be a root include path.
 target_include_directories(engine PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/engine
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
-# Link engine dependencies.
-# Note: ImGui is not in the current tree, but can be added here once integrated.
 target_link_libraries(engine PUBLIC 
     OpenGL::GL 
     glfw 
@@ -77,9 +69,6 @@ target_link_libraries(KleinEngine PRIVATE engine)
 # Build Configuration
 # -----------------------------------------------------------------------------
 
-# Ensure the executable has access to the resources directory relative to its path.
-# Relative paths in the code (e.g., "../resources/shaders/...") assume the 
-# executable is running from a subfolder like 'build/'.
 if(MSVC)
     set_target_properties(KleinEngine PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}")
 endif()
