@@ -15,7 +15,7 @@ namespace App {
         public:
         App(){
             //TODO: read from a json file, everything 
-            window = new Engine::Resources::Window(800,600,"test");
+            window = new Engine::Core::Window(800,600,"test");
             window->init();   
         }
 
@@ -150,7 +150,7 @@ namespace App {
             glfwTerminate();
         }
         private:
-        Engine::Resources::Window* window;
+        Engine::Core::Window* window;
 
         // 8 Vertices of a standard 1x1x1 cube
         float cubeVertices[6*24] = {

@@ -2,7 +2,7 @@
 #include <core/platform.hpp>
 
 namespace Engine{
-    namespace Resources {
+    namespace Core {
         WINDOW_STATE Window::init(){
             // postavljanje opengl specifikacije
             glfwInit();
@@ -10,7 +10,7 @@ namespace Engine{
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
             glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
     
-            this->window = glfwCreateWindow(_width,_height,_title,NULL,NULL);
+            this->window = glfwCreateWindow(_width,_height,_title.c_str(),NULL,NULL);
             if (this->window == NULL)
             {
                 std::cout << "Error in allocating window resources" << std::endl;
