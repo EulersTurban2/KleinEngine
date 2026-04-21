@@ -2,7 +2,7 @@
 
 namespace Engine
 {
-    namespace Resources{
+    namespace Renderer{
 
         Shader::Shader(std::string_view shaderPath, SHADER_TYPE type){
             std::string shaderStrSource = readShaderSource(shaderPath);

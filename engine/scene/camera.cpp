@@ -4,11 +4,14 @@ namespace Engine
 {
     namespace Camera
     {
+        Camera::Camera(const CameraSettings& settings): m_settings(settings) {
+            reset();
+        }
 
-        glm::mat4 Camera::getProjectionMatrix(float screenWidth, float screenHeight) {
+        glm::mat4 Camera::getProjectionMatrix(float screenWidth, float screenHeight) const{
             if (isHyperbolic) {
                 glm::mat4 proj = glm::mat4(0.0f);
-                float tanHalfFov = std::tan(glm::radians(fov) / 2.0f);
+                float tanHalfFov = std::tan(glm::radians(m_settings.fov) / 2.0f);
                 
                 proj[0][0] = 1.0f / (tanHalfFov * (screenWidth / screenHeight));
                 proj[1][1] = 1.0f / tanHalfFov;
@@ -21,22 +24,22 @@ namespace Engine
                 
                 return proj;
             } else {
-                return glm::perspective(glm::radians(fov), screenWidth / screenHeight, 0.1f, 100.0f);
+                return glm::perspective(glm::radians(m_settings.fov), screenWidth / screenHeight, 0.1f, 100.0f);
             }
         }
 
-        glm::mat4 Camera::getViewMatrix() {
+        glm::mat4 Camera::getViewMatrix() const {
             if (isHyperbolic) {
                 // Brza inverzija uz pomoć metrike Minkovskog
                 return Lorentz::inverse(lorentzState);
             } else {
                 // Standardni Euklidski pogled
-                return glm::lookAt(position, position + front, up);
+                return glm::lookAt(m_settings.position, m_settings.position + front, up);
             }
         }
 
-        void Camera::returnToOrigin() {
-            position = glm::vec3(0.0f, 0.0f, 3.0f);
+        void Camera::reset() {
+            m_settings.position = glm::vec3(0.0f, 0.0f, 3.0f);
             yaw = -90.0f;
             pitch = 0.0f;
             updateEuclideanVectors();
@@ -44,30 +47,30 @@ namespace Engine
         }
 
         void Camera::processKeyboard(CameraMovement direction, float deltaTime) {
-            float velocity = movementSpeed * deltaTime;
+            float velocity = m_settings.movementSpeed * deltaTime;
             glm::mat4 boost(1.0f);
             if (direction == CameraMovement::FORWARD)  {
-                position += front * velocity;
+                m_settings.position += front * velocity;
                 boost = Lorentz::lorentzBoostZ(velocity);
             }
             if (direction == CameraMovement::BACKWARD) {
-                position -= front * velocity;
+                m_settings.position -= front * velocity;
                 boost = Lorentz::lorentzBoostZ(-velocity);
             }
             if (direction == CameraMovement::LEFT)     {
-                position -= right * velocity;
+                m_settings.position -= right * velocity;
                 boost = Lorentz::lorentzBoostX(velocity);
             }
             if (direction == CameraMovement::RIGHT)    {
-                position += right * velocity;
+                m_settings.position += right * velocity;
                 boost = Lorentz::lorentzBoostX(-velocity);
             }
             if (direction == CameraMovement::UP)       {
-                position += up * velocity;
+                m_settings.position += up * velocity;
                 boost = Lorentz::lorentzBoostY(velocity);
             }
             if (direction == CameraMovement::DOWN)     {
-                position -= up * velocity;
+                m_settings.position -= up * velocity;
                 boost = Lorentz::lorentzBoostY(-velocity);
             }
             // Primjenjujemo lokalnu transformaciju i normalizujemo
@@ -76,8 +79,8 @@ namespace Engine
         }
         
         void Camera::processMouseMovement(float xoffset, float yoffset, bool constrainPitch) {
-            xoffset *= mouseSensitivity;
-            yoffset *= mouseSensitivity;
+            xoffset *= m_settings.mouseSensitivity;
+            yoffset *= m_settings.mouseSensitivity;
 
             // 1. Ažuriranje Euklidskog stanja (Eulerovi uglovi)
             yaw   += xoffset;
@@ -102,12 +105,13 @@ namespace Engine
 
         // Funkcija za azuriranje vektora kamere na osnovu trenutnih Eulerovih uglova
         void Camera::updateEuclideanVectors() {
-            glm::vec3 frontVec;
-            frontVec.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-            frontVec.y = sin(glm::radians(pitch));
-            frontVec.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-            front = glm::normalize(frontVec);
-            right = glm::normalize(glm::cross(front, worldUp));
+            glm::vec3 f;
+            f.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+            f.y = sin(glm::radians(pitch));
+            f.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+            
+            front = glm::normalize(f);
+            right = glm::normalize(glm::cross(front, glm::vec3(0, 1, 0)));
             up    = glm::normalize(glm::cross(right, front));
         }
 

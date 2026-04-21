@@ -1,0 +1,11 @@
+{
+    "app": {
+        "models": {
+            "cube" : {
+                "path": "resources/models/cube.obj",
+                "vertex" : "resources/shaders/vertex/vert1.glsl",
+                "fragment": "resources/shaders/fragment/frag1.glsl"
+            }
+        }
+    }
+}

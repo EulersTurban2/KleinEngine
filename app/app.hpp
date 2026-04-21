@@ -6,9 +6,12 @@
 #include "core/platform.hpp"
 #include "scene/camera.hpp"
 #include "math/lorentz.hpp"
+#include "core/input_manager.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
+
+using INPUT = Engine::Core::InputManager;
 
 namespace App {
     class App {
@@ -28,6 +31,7 @@ namespace App {
         void run() {
             GLFWwindow* nativeWin = m_window->getNativeWindow();
 
+            INPUT::init(nativeWin);
             // --- Resource Setup ---
             // We use the stack for Shaders because the Program links them and then we don't need them
             Engine::Resources::Shader vertexShader("../resources/shaders/vertex/vert1.glsl", Engine::Resources::VERTEX_SHADER);
@@ -56,46 +60,39 @@ namespace App {
             glEnableVertexAttribArray(0);            
             glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
             glEnableVertexAttribArray(1);
-
+            
             // --- State Setup ---
-            Engine::Camera::Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+            Engine::Camera::Camera camera;
             glfwSetInputMode(nativeWin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
+            
             float deltaTime = 0.0f;
             float lastFrame = 0.0f;
-            double lastX = 400.0, lastY = 300.0;
-            bool firstMouse = true;
             bool transparent_flag = true;
-
+            
             // --- Main Loop ---
             while (!m_window->shouldClose()) {
                 float currentFrame = glfwGetTime();
                 deltaTime = currentFrame - lastFrame;
                 lastFrame = currentFrame;
-
-                // Handles glfwPollEvents and SwapBuffers
+                
+                INPUT::Update();
                 m_window->onUpdate();
 
-                // Mouse Input
-                double xpos, ypos;
-                glfwGetCursorPos(nativeWin, &xpos, &ypos);
-                if (firstMouse) { lastX = xpos; lastY = ypos; firstMouse = false; }
-                
-                float xoffset = xpos - lastX;
-                float yoffset = lastY - ypos; 
-                lastX = xpos; lastY = ypos;
+                float xoffset = INPUT::getMouseDelta().x;
+                float yoffset = INPUT::getMouseDelta().y;
 
                 camera.processMouseMovement(xoffset, yoffset);
 
                 // Keyboard Input (To be moved to an InputManager later)
-                if (glfwGetKey(nativeWin, GLFW_KEY_W) == GLFW_PRESS) camera.processKeyboard(Engine::Camera::CameraMovement::FORWARD, deltaTime);
-                if (glfwGetKey(nativeWin, GLFW_KEY_S) == GLFW_PRESS) camera.processKeyboard(Engine::Camera::CameraMovement::BACKWARD, deltaTime);
-                if (glfwGetKey(nativeWin, GLFW_KEY_A) == GLFW_PRESS) camera.processKeyboard(Engine::Camera::CameraMovement::LEFT, deltaTime);
-                if (glfwGetKey(nativeWin, GLFW_KEY_D) == GLFW_PRESS) camera.processKeyboard(Engine::Camera::CameraMovement::RIGHT, deltaTime);
-                
+                if (INPUT::isKeyDown(GLFW_KEY_W)) camera.processKeyboard(Engine::Camera::CameraMovement::FORWARD, deltaTime);
+                if (INPUT::isKeyDown(GLFW_KEY_S)) camera.processKeyboard(Engine::Camera::CameraMovement::BACKWARD, deltaTime);
+                if (INPUT::isKeyDown(GLFW_KEY_A)) camera.processKeyboard(Engine::Camera::CameraMovement::LEFT, deltaTime);
+                if (INPUT::isKeyDown(GLFW_KEY_D)) camera.processKeyboard(Engine::Camera::CameraMovement::RIGHT, deltaTime);
+
                 // Toggle Logic (Consider adding a 'key released' check to prevent flickering)
-                if (glfwGetKey(nativeWin, GLFW_KEY_T) == GLFW_PRESS) transparent_flag = !transparent_flag;
-                if (glfwGetKey(nativeWin, GLFW_KEY_G) == GLFW_PRESS) camera.toggleGeometry();
+                if (INPUT::isKeyPressed(GLFW_KEY_T)) transparent_flag = !transparent_flag;
+                if (INPUT::isKeyPressed(GLFW_KEY_G)) camera.toggleGeometry();
+                if (INPUT::isKeyPressed(GLFW_KEY_SPACE)) camera.reset();
 
                 // --- Rendering ---
                 glClearColor(0.1f, 0.1f, 0.15f, 1.0f); // Slightly darker for better hyperbolic contrast

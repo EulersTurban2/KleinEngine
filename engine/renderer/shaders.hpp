@@ -21,7 +21,7 @@ namespace fs = std::filesystem;
 
 namespace Engine
 {
-    namespace Resources
+    namespace Renderer
     {
         enum SHADER_TYPE{
             VERTEX_SHADER = GL_VERTEX_SHADER,

@@ -27,6 +27,7 @@ add_library(engine STATIC
     engine/core/window.cpp
     engine/renderer/shaders.cpp
     engine/scene/camera.cpp
+    engine/core/input_manager.cpp
     external/glad/src/glad.c
 )
 

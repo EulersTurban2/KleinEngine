@@ -1,0 +1,1 @@
+### In the JSON definition used for model defining and loading add Texture!
