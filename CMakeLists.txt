@@ -20,14 +20,21 @@ find_package(glm REQUIRED)
 # Assimp (Model loading)
 find_package(assimp REQUIRED)
 
+# nlohmann/json
+find_package(nlohmann_json REQUIRED)
+
 # -----------------------------------------------------------------------------
 # Engine Library
 # -----------------------------------------------------------------------------
 add_library(engine STATIC
     engine/core/window.cpp
-    engine/renderer/shaders.cpp
-    engine/scene/camera.cpp
     engine/core/input_manager.cpp
+    engine/renderer/shaders.cpp
+    engine/renderer/mesh.cpp
+    engine/renderer/model.cpp
+    engine/resources/model_loader.cpp
+    engine/scene/camera.cpp
+    engine/scene/scene.cpp
     external/glad/src/glad.c
 )
 
@@ -41,6 +48,7 @@ target_link_libraries(engine PUBLIC
     glfw 
     glm::glm 
     assimp::assimp
+    nlohmann_json::nlohmann_json
 )
 
 # Link std::filesystem for older GCC versions if necessary

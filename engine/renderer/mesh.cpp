@@ -27,6 +27,11 @@ namespace Engine{
             other.VBO = 0;
             other.EBO = 0;
         }
+        void Mesh::draw(const Renderer::ShaderProgram& shader) const {
+            glBindVertexArray(VAO);
+            glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+        }
         Mesh &Mesh::operator=(Mesh &&other) noexcept
         {
             if (this != &other) {

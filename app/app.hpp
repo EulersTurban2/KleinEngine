@@ -2,11 +2,16 @@
 #define __APP_HPP
 
 #include "core/window.hpp"
-#include "renderer/shaders.hpp"
 #include "core/platform.hpp"
-#include "scene/camera.hpp"
-#include "math/lorentz.hpp"
 #include "core/input_manager.hpp"
+
+#include "scene/camera.hpp"
+#include "scene/entity.hpp"
+#include "scene/scene.hpp"
+
+#include "math/lorentz.hpp"
+
+#include "resources/model_loader.hpp" 
 
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
@@ -17,7 +22,6 @@ namespace App {
     class App {
     public:
         App() {
-            // In the future, this can be loaded via a JSON parser
             m_window = new Engine::Core::Window(800, 600, "Klein Engine - Hyperbolic Sandbox");
             if (m_window->init() != true) {
                 LOG_CRITICAL("Failed to initialize application window.");
@@ -25,51 +29,73 @@ namespace App {
         }
 
         ~App() {
+            Engine::Resources::ModelLoader::get().cleanUp();
             delete m_window;
         }
 
         void run() {
             GLFWwindow* nativeWin = m_window->getNativeWindow();
-
             INPUT::init(nativeWin);
-            // --- Resource Setup ---
-            // We use the stack for Shaders because the Program links them and then we don't need them
-            Engine::Resources::Shader vertexShader("../resources/shaders/vertex/vert1.glsl", Engine::Resources::VERTEX_SHADER);
-            Engine::Resources::Shader fragmentShader("../resources/shaders/fragment/frag1.glsl", Engine::Resources::FRAGMENT_SHADER);
-            
-            // Using our new unique-type-checked constructor
-            Engine::Resources::ShaderProgram shaderProgram({ &vertexShader, &fragmentShader });
-
-            // --- Geometry Setup (Buffer logic remains similar but encapsulated) ---
-            unsigned int VBO, VAO, EBO;
-            glGenVertexArrays(1, &VAO);
-            glGenBuffers(1, &VBO);
-            glGenBuffers(1, &EBO);
-
-            glBindVertexArray(VAO);
-            glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(solidIndices) + sizeof(lineIndices), NULL, GL_STATIC_DRAW);
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(solidIndices), solidIndices);
-            glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, sizeof(solidIndices), sizeof(lineIndices), lineIndices);
-
-            // Attributes: Position (0), Normal/Color (1)
-            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-            glEnableVertexAttribArray(0);            
-            glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-            glEnableVertexAttribArray(1);
-            
-            // --- State Setup ---
-            Engine::Camera::Camera camera;
             glfwSetInputMode(nativeWin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+            // 1. Load Assets into Cache
+            Engine::Resources::ModelLoader::get().loadFile("../resources/resources.json", "app");
+            auto cubeModel = Engine::Resources::ModelLoader::get().genModel("cube");
+            auto cubeShader = Engine::Resources::ModelLoader::get().createShaderProgram("cube");
+
+            if (!cubeModel || !cubeShader) {
+                LOG_CRITICAL("Core assets failed to load. Exiting.");
+                return;
+            }
+
+            // 2. Create the Scene and populate it
+            Engine::Camera::Camera rCamera;
+            Engine::Scene::Scene mainScene(rCamera);
+
+            std::vector<glm::vec3> startPositions = {
+                { 0.0f,  0.0f,  0.0f},   // Cube 0
+                { 2.0f,  5.0f, -15.0f},  // Cube 1
+                {-1.5f, -2.2f, -2.5f},   // Cube 2
+                {-3.8f, -2.0f, -12.3f}   // Cube 3
+            };
+
+            for (int i = 0; i < startPositions.size(); i++) {
+                Engine::Scene::Entity newCube;
+                newCube.name = "Cube_" + std::to_string(i);
+                newCube.model = cubeModel;
+                newCube.shader = cubeShader;
+                newCube.transform.position = startPositions[i];
+                
+                if (i == 0) {
+                    // Script for Cube 0: Hover up and down smoothly
+                    newCube.onUpdate = [](Engine::Scene::Entity& self, float dt) {
+                        self.transform.position.y = glm::sin(glfwGetTime()) * 2.0f;
+                        self.transform.rotation.y += 45.0f * dt; 
+                    };
+                } 
+                else if (i == 1) {
+                    // Script for Cube 1: Spin aggressively out of control
+                    newCube.onUpdate = [](Engine::Scene::Entity& self, float dt) {
+                        self.transform.rotation.x += 200.0f * dt;
+                        self.transform.rotation.z += 3000.0f * dt;
+                    };
+                }
+                else if (i == 2) {
+                    // Script for Cube 2: Grow and shrink
+                    newCube.onUpdate = [](Engine::Scene::Entity& self, float dt) {
+                        float scale = 1.0f + 0.5f * glm::sin(glfwGetTime() * 3.0f);
+                        self.transform.scale = glm::vec3(scale);
+                    };
+                }
+                
+                mainScene.addEntity(newCube);
+            }
             
             float deltaTime = 0.0f;
             float lastFrame = 0.0f;
             bool transparent_flag = true;
             
-            // --- Main Loop ---
+            // --- MAIN LOOP ---
             while (!m_window->shouldClose()) {
                 float currentFrame = glfwGetTime();
                 deltaTime = currentFrame - lastFrame;
@@ -78,114 +104,44 @@ namespace App {
                 INPUT::Update();
                 m_window->onUpdate();
 
-                float xoffset = INPUT::getMouseDelta().x;
-                float yoffset = INPUT::getMouseDelta().y;
+                // --- Input (Routing directly to the Scene's Camera) ---
+                auto& cam = mainScene.getCamera();
+                cam.processMouseMovement(INPUT::getMouseDelta().x, INPUT::getMouseDelta().y);
 
-                camera.processMouseMovement(xoffset, yoffset);
+                if (INPUT::isKeyDown(GLFW_KEY_W)) cam.processKeyboard(Engine::Camera::CameraMovement::FORWARD, deltaTime);
+                if (INPUT::isKeyDown(GLFW_KEY_S)) cam.processKeyboard(Engine::Camera::CameraMovement::BACKWARD, deltaTime);
+                if (INPUT::isKeyDown(GLFW_KEY_A)) cam.processKeyboard(Engine::Camera::CameraMovement::LEFT, deltaTime);
+                if (INPUT::isKeyDown(GLFW_KEY_D)) cam.processKeyboard(Engine::Camera::CameraMovement::RIGHT, deltaTime);
 
-                // Keyboard Input (To be moved to an InputManager later)
-                if (INPUT::isKeyDown(GLFW_KEY_W)) camera.processKeyboard(Engine::Camera::CameraMovement::FORWARD, deltaTime);
-                if (INPUT::isKeyDown(GLFW_KEY_S)) camera.processKeyboard(Engine::Camera::CameraMovement::BACKWARD, deltaTime);
-                if (INPUT::isKeyDown(GLFW_KEY_A)) camera.processKeyboard(Engine::Camera::CameraMovement::LEFT, deltaTime);
-                if (INPUT::isKeyDown(GLFW_KEY_D)) camera.processKeyboard(Engine::Camera::CameraMovement::RIGHT, deltaTime);
-
-                // Toggle Logic (Consider adding a 'key released' check to prevent flickering)
+                // Toggles
                 if (INPUT::isKeyPressed(GLFW_KEY_T)) transparent_flag = !transparent_flag;
-                if (INPUT::isKeyPressed(GLFW_KEY_G)) camera.toggleGeometry();
-                if (INPUT::isKeyPressed(GLFW_KEY_SPACE)) camera.reset();
+                if (INPUT::isKeyPressed(GLFW_KEY_G)) cam.toggleGeometry();
+                if (INPUT::isKeyPressed(GLFW_KEY_SPACE)) cam.reset();
+
+                // --- Update Game Logic ---
+                // This single line triggers all those custom lambdas you wrote above!
+                mainScene.update(deltaTime);
 
                 // --- Rendering ---
-                glClearColor(0.1f, 0.1f, 0.15f, 1.0f); // Slightly darker for better hyperbolic contrast
+                glClearColor(0.1f, 0.1f, 0.15f, 1.0f); 
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                
-                shaderProgram.use();
-
-                // Calculate Matrices
-                glm::mat4 view = camera.getViewMatrix();
-                glm::mat4 projection = camera.getProjectionMatrix(800.0f, 600.0f);
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::rotate(model, (float)glfwGetTime() * glm::radians(20.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-                float scale = 1.0f + 0.5f * glm::sin((float)glfwGetTime());
-                model = glm::scale(model, glm::vec3(scale));
-
-                // --- THE CLEAN PART: Using the new Setters ---
-                shaderProgram.setMat4("uModel", model);
-                shaderProgram.setMat4("uView", view);
-                shaderProgram.setMat4("uProj", projection);
-                shaderProgram.setBool("uIsHyperbolic", camera.getIsHyperbolic());
-
-                glBindVertexArray(VAO);
                 
                 if (transparent_flag) {
                     glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 } else {
-                    glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+                    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
                 }
-                
-                // Draw wireframe overlay
-                glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, (void*)sizeof(solidIndices));
-            }
 
-            // Cleanup
-            glDeleteVertexArrays(1, &VAO);
-            glDeleteBuffers(1, &VBO);
-            glDeleteBuffers(1, &EBO);
+                // ONE FUNCTION CALL TO DRAW THE ENTIRE WORLD
+                mainScene.draw(m_window->getWidth(), m_window->getHeight());
+                
+                // Reset to fill mode so UI/other elements don't draw as lines later
+                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            }
         }
 
     private:
         Engine::Core::Window* m_window;
-
-        // --- Data (Ideally moved to a Mesh class next) ---
-        float cubeVertices[144] = {
-            // Positions          // Normals
-            // Front face (Normal: 0.0f, 0.0f, 1.0f)
-            -0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f, // 0: Bottom-Left
-            0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f, // 1: Bottom-Right
-            0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f, // 2: Top-Right
-            -0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f, // 3: Top-Left
-
-            // Back face (Normal: 0.0f, 0.0f, -1.0f)
-            0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f, // 4: Bottom-Left
-            -0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f, // 5: Bottom-Right
-            -0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f, // 6: Top-Right
-            0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f, // 7: Top-Left
-
-            // Left face (Normal: -1.0f, 0.0f, 0.0f)
-            -0.5f, -0.5f, -0.5f,  -1.0f,  0.0f,  0.0f, // 8: Bottom-Left
-            -0.5f, -0.5f,  0.5f,  -1.0f,  0.0f,  0.0f, // 9: Bottom-Right
-            -0.5f,  0.5f,  0.5f,  -1.0f,  0.0f,  0.0f, // 10: Top-Right
-            -0.5f,  0.5f, -0.5f,  -1.0f,  0.0f,  0.0f, // 11: Top-Left
-
-            // Right face (Normal: 1.0f, 0.0f, 0.0f)
-            0.5f, -0.5f,  0.5f,   1.0f,  0.0f,  0.0f, // 12: Bottom-Left
-            0.5f, -0.5f, -0.5f,   1.0f,  0.0f,  0.0f, // 13: Bottom-Right
-            0.5f,  0.5f, -0.5f,   1.0f,  0.0f,  0.0f, // 14: Top-Right
-            0.5f,  0.5f,  0.5f,   1.0f,  0.0f,  0.0f, // 15: Top-Left
-
-            // Top face (Normal: 0.0f, 1.0f, 0.0f)
-            -0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f, // 16: Bottom-Left
-            0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f, // 17: Bottom-Right
-            0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f, // 18: Top-Right
-            -0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f, // 19: Top-Left
-
-            // Bottom face (Normal: 0.0f, -1.0f, 0.0f)
-            -0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f, // 20: Bottom-Left
-            0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f, // 21: Bottom-Right
-            0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f, // 22: Top-Right
-            -0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f  // 23: Top-Left
-        };
-
-        unsigned int solidIndices[36] = {
-            0,  1,  2,  2,  3,  0,  4,  5,  6,  6,  7,  4,
-            8,  9,  10, 10, 11, 8,  12, 13, 14, 14, 15, 12,
-            16, 17, 18, 18, 19, 16, 20, 21, 22, 22, 23, 20
-        };
-
-        unsigned int lineIndices[24] = {
-            0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7 
-        };
     };    
 }
 
