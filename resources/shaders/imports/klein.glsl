@@ -6,8 +6,20 @@ vec4 normalizeMinkowski(vec4 v){
     return v / len;
 }
 
+// Use this ONLY for directions (Normals, Light Vectors, View Vectors)
+vec4 normalizeVectorM(vec4 v){
+    float len = sqrt(max(0.0001, dotMinkowski(v,v))); 
+    return v / len;
+}
+
+// Use this ONLY for coordinates (vFragPos)
+vec4 normalizePositionM(vec4 p){
+    float len = sqrt(max(0.0001, -dotMinkowski(p,p)));
+    return p / len;
+}
+
 vec4 kleinToMinkowski(vec4 p){
-    float s = p.x*p.x + p.y*p.y + p.z*p.z;
+    float s = min(p.x*p.x + p.y*p.y + p.z*p.z, 0.9999);
     float w = sqrt(1 / (1-s));
     return vec4(p.x*w,p.y*w,p.z*w,w);
 }
@@ -25,7 +37,7 @@ vec4 crossMinkowski(vec4 a, vec4 b, vec4 c){
 }
 
 float distanceHyp(vec4 p1, vec4 p2) {
-    return acosh(max(1.0, -dotMinkowski(p1, p2)));
+    return acosh(-dotMinkowski(p1, p2));
 }
 
 float attenuationMinkowski(float dist, float radius){
@@ -34,4 +46,24 @@ float attenuationMinkowski(float dist, float radius){
     float ratio = dist / radius;
     float window = max(0.0,1.0-(ratio*ratio*ratio*ratio));
     return decay * window * window;
+}
+
+vec4 reflectHyperbolic(vec4 P, vec4 N){
+    float dotPN = dotMinkowski(P,N);
+    float dotNN = dotMinkowski(N,N);
+    return P - 2.0*(dotPN/dotNN)*N;
+}
+
+float dotKleinMetric(vec3 x, vec3 u, vec3 v) {
+    float x_sq = dot(x, x);
+    float inv_scale = 1.0 / (1.0 - x_sq);
+    
+    float term1 = dot(u, v) * inv_scale;
+    float term2 = (dot(x, u) * dot(x, v)) * (inv_scale * inv_scale);
+    
+    return term1 + term2;
+}
+
+float lengthKlein(vec3 x, vec3 v) {
+    return sqrt(max(0.0, dotKleinMetric(x, v, v)));
 }

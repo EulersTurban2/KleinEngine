@@ -50,7 +50,8 @@ namespace Engine
                 glm::mat4 getViewMatrix() const;
                 glm::mat4 getProjectionMatrix(float screenWidth, float screenHeight) const;
                 
-                
+                glm::vec3 getPosition() const;
+
                 bool getIsHyperbolic() const;
             private:
                 // Osnovni atributi EUKLIDSKE kamere

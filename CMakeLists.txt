@@ -29,6 +29,7 @@ find_package(nlohmann_json REQUIRED)
 add_library(engine STATIC
     engine/core/window.cpp
     engine/core/input_manager.cpp
+    engine/renderer/texture.cpp
     engine/renderer/shaders.cpp
     engine/renderer/mesh.cpp
     engine/renderer/model.cpp

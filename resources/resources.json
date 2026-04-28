@@ -5,6 +5,11 @@
                 "path": "../resources/models/cube.obj",
                 "vertex" : "../resources/shaders/vertex/vert1.glsl",
                 "fragment": "../resources/shaders/fragment/frag1.glsl"
+            },
+            "lightSource" : {
+                "path" : "../resources/models/cube.obj",
+                "vertex" : "../resources/shaders/vertex/lightvert1.glsl",
+                "fragment" : "../resources/shaders/fragment/lightfrag1.glsl"
             }
         }
     }

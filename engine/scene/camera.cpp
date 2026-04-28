@@ -28,6 +28,11 @@ namespace Engine
             }
         }
 
+        glm::vec3 Camera::getPosition() const
+        {
+            return m_settings.position;
+        }
+
         glm::mat4 Camera::getViewMatrix() const {
             if (isHyperbolic) {
                 // Brza inverzija uz pomoć metrike Minkovskog
