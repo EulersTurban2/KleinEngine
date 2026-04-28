@@ -23,17 +23,19 @@ namespace Engine{
 
             for (const auto& ent: mEntities)
             {
-                if (!ent.model || !ent.shader) continue;
+                auto shader = ent.material->getShader();
+                if (!ent.model || !shader) continue;
+                
+                ent.material->apply();
+                shader->use();
 
-                ent.shader->use();
+                shader->setMat4("uView", view);
+                shader->setMat4("uProj", projection);
+                shader->setBool("uIsHyperbolic", isHyp);
 
-                ent.shader->setMat4("uView", view);
-                ent.shader->setMat4("uProj", projection);
-                ent.shader->setBool("uIsHyperbolic", isHyp);
+                shader->setMat4("uModel", ent.transform.getModelMatrix());
 
-                ent.shader->setMat4("uModel", ent.transform.getModelMatrix());
-
-                ent.model->draw(*(ent.shader));
+                ent.model->draw(*(shader));
             }
             
         }

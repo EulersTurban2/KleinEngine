@@ -12,14 +12,11 @@ void main() {
     vec4 pos;
     
     if (uIsHyperbolic) {
-        // Map mesh vertices to hyperboloid
         float w = sqrt(1.0 + dot(aPos, aPos));
         pos = vec4(aPos, w);
         
-        // Transform to View Space
         vFragPos = uView * uModel * pos;
         
-        // Klein Projection for the vertex positions
         vec4 kleinPos = vec4(vFragPos.xyz / vFragPos.w, 1.0);
         gl_Position = uProj * kleinPos;
     } else {

@@ -8,7 +8,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "renderer/model.hpp"
-#include "renderer/shaders.hpp"
+#include "renderer/material.hpp" // Replaced shaders.hpp with material.hpp
 
 namespace Engine{
     namespace Scene{
@@ -24,7 +24,7 @@ namespace Engine{
                 mat = glm::rotate(mat, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
                 mat = glm::rotate(mat, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
                 mat = glm::rotate(mat, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-                mat = glm::scale(mat,scale);
+                mat = glm::scale(mat, scale);
                 return mat;
             };
         };
@@ -34,7 +34,7 @@ namespace Engine{
             Transform transform;
 
             std::shared_ptr<Renderer::Model> model;
-            std::shared_ptr<Renderer::ShaderProgram> shader;
+            std::shared_ptr<Renderer::Material> material;
 
             std::function<void(Entity&, float)> onUpdate = nullptr;
         };

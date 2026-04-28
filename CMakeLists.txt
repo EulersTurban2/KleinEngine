@@ -33,6 +33,7 @@ add_library(engine STATIC
     engine/renderer/shaders.cpp
     engine/renderer/mesh.cpp
     engine/renderer/model.cpp
+    engine/renderer/material.cpp
     engine/resources/model_loader.cpp
     engine/scene/camera.cpp
     engine/scene/scene.cpp
@@ -41,6 +42,7 @@ add_library(engine STATIC
 
 target_include_directories(engine PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/engine
+    ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/include
 )
 
@@ -49,6 +51,7 @@ target_link_libraries(engine PUBLIC
     glfw 
     glm::glm 
     assimp::assimp
+    draco
     nlohmann_json::nlohmann_json
 )
 

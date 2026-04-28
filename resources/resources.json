@@ -1,15 +1,50 @@
 {
     "app": {
-        "models": {
+        "assets" : {
+            "models" : {
+                "cube" : "../resources/models/cube.obj"
+            },
+            "materials" : {
+                "default" : {
+                    "shaders" : {
+                        "vertex" : "../resources/shaders/vertex/vert1.glsl",
+                        "fragment" : "../resources/shaders/fragment/frag1.glsl"
+                    },
+                    "textures" : {
+                        "albedo" : "../resources/materials/default/awesomeface.png"
+                    },
+                    "lightSpec" : {
+                        "ambient" : 0.5,
+                        "diffuse" : 1.0,
+                        "specular" : 32.0
+                    }
+                },
+                "lightDefault" : {
+                    "shaders":{
+                        "vertex" : "../resources/shaders/vertex/lightvert1.glsl",
+                        "fragment" : "../resources/shaders/fragment/lightfrag1.glsl"
+                    },
+                    "textures" : {
+                        
+                    },
+                    "lightSourceSpec" : {
+                        "color" : [1.0, 1.0, 1.0],
+                        "intensity" : 15.0,                        
+                        "emission_strength" : 5.0
+                    }
+                }
+            }
+        },
+        "entities" : {
             "cube" : {
-                "path": "../resources/models/cube.obj",
-                "vertex" : "../resources/shaders/vertex/vert1.glsl",
-                "fragment": "../resources/shaders/fragment/frag1.glsl"
+                "model" : "cube",
+                "material" : "default",
+                "name" : "absorber"
             },
             "lightSource" : {
-                "path" : "../resources/models/cube.obj",
-                "vertex" : "../resources/shaders/vertex/lightvert1.glsl",
-                "fragment" : "../resources/shaders/fragment/lightfrag1.glsl"
+                "model" : "cube",
+                "material" : "lightDefault",
+                "name" : "light_sourcer"
             }
         }
     }
