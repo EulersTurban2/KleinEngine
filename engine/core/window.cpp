@@ -29,15 +29,14 @@ namespace Engine{
             LOG_INFO("GLAD initialized successfully");
 
             setCallbacks();
+            Platform::PlatformManager::init(this);
             glfwSwapInterval(_vsync ? 1 : 0);
-
-
+            
             return true;
         }
 
         void Window::onUpdate()
         {
-            processInput();
             glfwPollEvents();
             glfwSwapBuffers(this->window);
         }

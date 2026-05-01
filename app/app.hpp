@@ -8,7 +8,12 @@
 #include "scene/entity.hpp"
 #include "scene/scene.hpp"
 #include "math/lorentz.hpp"
-#include "resources/model_loader.hpp" 
+
+// --- New Pipeline Includes ---
+#include "core/enviroment.hpp"
+#include "resources/entity_loader.hpp"
+#include "resources/material_loader.hpp"
+#include "resources/resource_cache.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
@@ -28,7 +33,8 @@ namespace App {
         }
 
         ~App() {
-            Engine::Resources::ModelLoader::get().cleanUp();
+            // Replaced the old ModelLoader cleanUp with the centralized ResourceCache clearer
+            Engine::Resources::EntityLoader::getInstance().clearCache();
             delete m_window;
         }
 
@@ -37,16 +43,17 @@ namespace App {
             INPUT::init(nativeWin);
             glfwSetInputMode(m_window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-            auto& loader = Engine::Resources::ModelLoader::get();
+            // --- Boot the Engine Environment and Database ---
+            Engine::Core::Environment::get().loadConfig("engine.json");
+            Engine::Core::Environment::get().bootResourceDatabase();
 
-            // Load resources from JSON
-            loader.loadFile("../resources/resources.json", "app");
+            auto& entityLoader = Engine::Resources::EntityLoader::getInstance();
 
             // --- Entity Orchestration ---
             Engine::Camera::Camera rCamera;
             Engine::Scene::Scene mainScene(rCamera);
 
-            // 1. Setup Standard Cubes using fetchEntity
+            // 1. Setup Standard Cubes using the new EntityLoader
             std::vector<glm::vec3> startPositions = {
                 { 0.0f,  0.0f,  0.0f},   
                 { 2.0f,  2.0f, -15.0f},   
@@ -56,7 +63,7 @@ namespace App {
 
             for (size_t i = 0; i < startPositions.size(); i++) {
                 
-                Engine::Scene::Entity cubeInstance = loader.instantiate("cube");
+                Engine::Scene::Entity cubeInstance = entityLoader.instantiate("cube");
                 cubeInstance.name = "Cube_" + std::to_string(i);
                 cubeInstance.transform.position = startPositions[i];
                 
@@ -81,7 +88,7 @@ namespace App {
             }
 
             // 2. Setup Light Source
-            auto lightTemplate = loader.fetchEntity("lightSource");
+            auto lightTemplate = entityLoader.getEntityTemplate("lightSource");
             if (lightTemplate) {
                 Engine::Scene::Entity lightInstance = *lightTemplate;
                 lightInstance.name = "MainLight";
@@ -126,8 +133,8 @@ namespace App {
 
                 mainScene.update(deltaTime);
 
-                
-                auto defaultMat = loader.fetchMaterial("default");
+                // Setup uniform data dynamically fetching the material via MaterialLoader
+                auto defaultMat = Engine::Resources::EntityLoader::getInstance().getMaterial("default");
                 if (defaultMat) {
                     auto shader = defaultMat->getShader(); 
                     shader->use(); 

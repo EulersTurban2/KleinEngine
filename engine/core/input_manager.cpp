@@ -13,6 +13,24 @@ namespace Engine{
             m_window = window;
         }
 
+        void InputManager::keyCallback(int key, int action){
+            if (action == 1) {
+                m_keyState[key] = true;
+            } else if (action == 0) {
+                m_keyState[key] = false;
+            }
+        }
+
+        void InputManager::mouseCallback(double xpos, double ypos){
+            m_mousePosition.x = static_cast<float>(xpos);
+            m_mousePosition.y = static_cast<float>(ypos);
+
+            if (m_firstMouse) {
+                m_prevMousePosition = m_mousePosition;
+                m_firstMouse = false;
+            }
+        }
+
         void InputManager::Update(){
             m_prevKeyState = m_keyState;
             for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; ++key){

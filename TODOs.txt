@@ -1,1 +1,1 @@
-### In the JSON definition used for model defining and loading add Texture!
+## REwrite in resource_database the getters and setters

@@ -29,12 +29,20 @@ find_package(nlohmann_json REQUIRED)
 add_library(engine STATIC
     engine/core/window.cpp
     engine/core/input_manager.cpp
+    engine/core/platform.cpp
+    engine/core/timer.cpp
+    engine/core/enviroment.cpp
     engine/renderer/texture.cpp
     engine/renderer/shaders.cpp
     engine/renderer/mesh.cpp
     engine/renderer/model.cpp
     engine/renderer/material.cpp
+    engine/resources/entity_loader.cpp
     engine/resources/model_loader.cpp
+    engine/resources/material_loader.cpp
+    engine/resources/texture_loader.cpp
+    engine/resources/shader_loader.cpp
+    engine/resources/resource_database.cpp
     engine/scene/camera.cpp
     engine/scene/scene.cpp
     external/glad/src/glad.c

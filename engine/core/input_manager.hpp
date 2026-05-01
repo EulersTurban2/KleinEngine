@@ -20,6 +20,9 @@ namespace Engine{
                 static glm::vec2 getMousePosition();
                 static glm::vec2 getMouseDelta();
 
+                static void keyCallback(int key, int action);
+                static void mouseCallback(double xpos, double ypos);
+
                 static void init(GLFWwindow* window);
             private:
                 static GLFWwindow* m_window;
