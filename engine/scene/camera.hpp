@@ -7,8 +7,11 @@
 
 #include <string>
 
+#include "core/input_manager.hpp"
 #include "core/logger.hpp"
 #include "math/lorentz.hpp"
+
+using INPUT = Engine::Core::InputManager;
 
 namespace Engine
 {
@@ -53,6 +56,9 @@ namespace Engine
                 glm::vec3 getPosition() const;
 
                 bool getIsHyperbolic() const;
+
+                void handleInput(float deltaTime);
+
             private:
                 // Osnovni atributi EUKLIDSKE kamere
                 glm::vec3 front;

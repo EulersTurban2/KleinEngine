@@ -13,10 +13,6 @@
 namespace Engine::Resources {
     class EntityLoader {
 
-        friend class TextureLoader;
-        friend class MaterialLoader;
-        friend class ShaderLoader;
-
         public:
             
             static EntityLoader& getInstance() {

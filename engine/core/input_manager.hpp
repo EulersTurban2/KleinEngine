@@ -1,6 +1,7 @@
 #ifndef __INPUT_MANAGER_HPP
 #define __INPUT_MANAGER_HPP
 
+#define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 #include <unordered_map>
 #include <glm/glm.hpp>

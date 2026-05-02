@@ -45,6 +45,8 @@ add_library(engine STATIC
     engine/resources/resource_database.cpp
     engine/scene/camera.cpp
     engine/scene/scene.cpp
+    engine/scene/octree.cpp
+    engine/scene/uniform_grid.cpp
     external/glad/src/glad.c
 )
 

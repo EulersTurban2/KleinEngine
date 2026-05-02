@@ -123,5 +123,15 @@ namespace Engine
         bool Camera::getIsHyperbolic() const {
             return isHyperbolic;
         }
+        void Camera::handleInput(float deltaTime)
+        {
+            processMouseMovement(INPUT::getMouseDelta().x, INPUT::getMouseDelta().y);
+            if (INPUT::isKeyDown(GLFW_KEY_W)) processKeyboard(Engine::Camera::CameraMovement::FORWARD, deltaTime);
+            if (INPUT::isKeyDown(GLFW_KEY_S)) processKeyboard(Engine::Camera::CameraMovement::BACKWARD, deltaTime);
+            if (INPUT::isKeyDown(GLFW_KEY_A)) processKeyboard(Engine::Camera::CameraMovement::LEFT, deltaTime);
+            if (INPUT::isKeyDown(GLFW_KEY_D)) processKeyboard(Engine::Camera::CameraMovement::RIGHT, deltaTime);
+            if (INPUT::isKeyPressed(GLFW_KEY_G)) toggleGeometry();
+            if (INPUT::isKeyPressed(GLFW_KEY_SPACE)) reset();
+        }
     }
 }

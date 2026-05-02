@@ -4,12 +4,12 @@
 #include "core/window.hpp"
 #include "core/platform.hpp"
 #include "core/input_manager.hpp"
-#include "scene/camera.hpp"
-#include "scene/entity.hpp"
-#include "scene/scene.hpp"
+#include "core/timer.hpp"
+#include "scene/camera.hpp" 
+#include "scene/entity.hpp"  
+#include "scene/scene.hpp"  
+#include "scene/octree.hpp"      
 #include "math/lorentz.hpp"
-
-// --- New Pipeline Includes ---
 #include "core/enviroment.hpp"
 #include "resources/entity_loader.hpp"
 #include "resources/material_loader.hpp"
@@ -18,7 +18,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 #include <cmath>
-#include <stb_image.h>
+#include <memory>
 
 using INPUT = Engine::Core::InputManager;
 
@@ -26,14 +26,13 @@ namespace App {
     class App {
     public:
         App() {
-            m_window = new Engine::Core::Window(800, 600, "Klein Engine - Hyperbolic Sandbox");
-            if (m_window->init() != true) {
+            m_window = new Engine::Core::Window(800, 600, "Klein Engine - Hyperbolic Octree Sandbox");
+            if (!m_window->init()) {
                 LOG_CRITICAL("Failed to initialize application window."); 
             }
         }
 
         ~App() {
-            // Replaced the old ModelLoader cleanUp with the centralized ResourceCache clearer
             Engine::Resources::EntityLoader::getInstance().clearCache();
             delete m_window;
         }
@@ -41,19 +40,22 @@ namespace App {
         void run() {
             GLFWwindow* nativeWin = m_window->getNativeWindow();
             INPUT::init(nativeWin);
-            glfwSetInputMode(m_window->getNativeWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetInputMode(nativeWin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-            // --- Boot the Engine Environment and Database ---
             Engine::Core::Environment::get().loadConfig("engine.json");
             Engine::Core::Environment::get().bootResourceDatabase();
 
             auto& entityLoader = Engine::Resources::EntityLoader::getInstance();
 
-            // --- Entity Orchestration ---
+            // --- Scene & Spatial Index Orchestration ---
             Engine::Camera::Camera rCamera;
             Engine::Scene::Scene mainScene(rCamera);
 
-            // 1. Setup Standard Cubes using the new EntityLoader
+            // Initialize Octree with global world bounds[cite: 1, 6]
+            Engine::Scene::AABB worldBounds{{0.0f, 0.0f, 0.0f}, {100.0f, 100.0f, 100.0f}};
+            mainScene.setSpatialIndex(std::make_unique<Engine::Scene::Octree>(worldBounds, 8));
+
+            // 1. Setup Standard Cubes with pointer stability[cite: 8]
             std::vector<glm::vec3> startPositions = {
                 { 0.0f,  0.0f,  0.0f},   
                 { 2.0f,  2.0f, -15.0f},   
@@ -62,55 +64,50 @@ namespace App {
             };
 
             for (size_t i = 0; i < startPositions.size(); i++) {
-                
-                Engine::Scene::Entity cubeInstance = entityLoader.instantiate("cube");
-                cubeInstance.name = "Cube_" + std::to_string(i);
-                cubeInstance.transform.position = startPositions[i];
+                auto cubeInstance = std::make_unique<Engine::Scene::Entity>(entityLoader.instantiate("cube"));
+                cubeInstance->name = "Cube_" + std::to_string(i);
+                cubeInstance->transform.position = startPositions[i];
                 
                 if (i == 0) {
-                    cubeInstance.onUpdate = [](Engine::Scene::Entity& self, float dt) {
+                    cubeInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
                         self.transform.position.y = glm::sin(glfwGetTime()) * 2.0f;
                         self.transform.rotation.y += 45.0f * dt; 
                     };
                 } else if (i == 1) {
-                    cubeInstance.onUpdate = [](Engine::Scene::Entity& self, float dt) {
+                    cubeInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
                         self.transform.rotation.x += 200.0f * dt;
                         self.transform.rotation.z += 3000.0f * dt;
                     };
                 } else if (i == 2) {
-                    cubeInstance.onUpdate = [](Engine::Scene::Entity& self, float dt) {
-                        float scale = 1.0f + 0.5f * glm::sin(glfwGetTime() * 3.0f);
-                        self.transform.scale = glm::vec3(scale);
+                    cubeInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
+                        self.transform.scale.x = glm::sin(glfwGetTime()) * 2.0f;
+                        self.transform.scale.z = glm::sin(glfwGetTime()) * 2.0f;
                     };
                 }
                 
-                mainScene.addEntity(cubeInstance);
+                mainScene.addEntity(std::move(cubeInstance));
             }
 
             // 2. Setup Light Source
             auto lightTemplate = entityLoader.getEntityTemplate("lightSource");
             if (lightTemplate) {
-                Engine::Scene::Entity lightInstance = *lightTemplate;
-                lightInstance.name = "MainLight";
-                lightInstance.transform.position = { 0.0f, 0.0f, -1.0f };
+                auto lightInstance = std::make_unique<Engine::Scene::Entity>(*lightTemplate);
+                lightInstance->name = "MainLight";
+                lightInstance->transform.position = { 0.0f, 0.0f, -1.0f };
                 
-                lightInstance.onUpdate = [](Engine::Scene::Entity& self, float dt) {
+                lightInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
                     self.transform.rotation.x += 30.0f * dt;
-                    self.transform.rotation.z += 30.0f * dt;
                 };
-                mainScene.addEntity(lightInstance);
+                mainScene.addEntity(std::move(lightInstance));
             }
 
-            float deltaTime = 0.0f;
-            float lastFrame = 0.0f;
-            bool transparent_flag = false;
             glEnable(GL_DEPTH_TEST);
+            Engine::Core::Timer::init();
 
             // --- MAIN LOOP ---
             while (!m_window->shouldClose()) {
-                float currentFrame = glfwGetTime();
-                deltaTime = currentFrame - lastFrame;
-                lastFrame = currentFrame;
+                Engine::Core::Timer::update();
+                float deltaTime = Engine::Core::Timer::getDeltaTime();
                 
                 INPUT::Update();
                 m_window->onUpdate();
@@ -119,29 +116,20 @@ namespace App {
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 auto& cam = mainScene.getCamera();
-                cam.processMouseMovement(INPUT::getMouseDelta().x, INPUT::getMouseDelta().y);
+                cam.handleInput(deltaTime); //[cite: 2]
 
-                // Handle Camera Input
-                if (INPUT::isKeyDown(GLFW_KEY_W)) cam.processKeyboard(Engine::Camera::CameraMovement::FORWARD, deltaTime);
-                if (INPUT::isKeyDown(GLFW_KEY_S)) cam.processKeyboard(Engine::Camera::CameraMovement::BACKWARD, deltaTime);
-                if (INPUT::isKeyDown(GLFW_KEY_A)) cam.processKeyboard(Engine::Camera::CameraMovement::LEFT, deltaTime);
-                if (INPUT::isKeyDown(GLFW_KEY_D)) cam.processKeyboard(Engine::Camera::CameraMovement::RIGHT, deltaTime);
-
-                if (INPUT::isKeyPressed(GLFW_KEY_T)) transparent_flag = !transparent_flag;
-                if (INPUT::isKeyPressed(GLFW_KEY_G)) cam.toggleGeometry();
-                if (INPUT::isKeyPressed(GLFW_KEY_SPACE)) cam.reset();
-
+                // Scene Update (Synchronizes entities and Spatial Index)
                 mainScene.update(deltaTime);
 
-                // Setup uniform data dynamically fetching the material via MaterialLoader
+                // Lighting logic using hyperbolic state[cite: 2]
                 auto defaultMat = Engine::Resources::EntityLoader::getInstance().getMaterial("default");
                 if (defaultMat) {
                     auto shader = defaultMat->getShader(); 
                     shader->use(); 
 
                     glm::mat4 view = cam.getViewMatrix();
-                    glm::vec4 lightWorldPos;
                     glm::vec3 lightOrigin = { 0.0f, 0.0f, -1.0f };
+                    glm::vec4 lightWorldPos;
                     
                     if (cam.getIsHyperbolic()) {
                         float w = std::sqrt(1.0f + glm::dot(lightOrigin, lightOrigin)); 
@@ -150,21 +138,13 @@ namespace App {
                         lightWorldPos = glm::vec4(lightOrigin, 1.0f);
                     }
                     
-                    glm::vec4 lightViewPos = view * lightWorldPos; 
-                    shader->setVec4("uLightPos", lightViewPos);
+                    shader->setVec4("uLightPos", view * lightWorldPos);
                     shader->setFloat("uLightRadius", 40.0f);
                     shader->setVec3("uLightColor", glm::vec3(1.0f, 0.2f, 0.2f)); 
-                    
-                    glm::vec3 camPos = cam.getPosition();
-                    float w = std::sqrt(1.0f + glm::dot(camPos, camPos));
-                    shader->setVec4("cameraPos", glm::vec4(camPos, w));
                 }
 
-                if (transparent_flag) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-                else glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+                // Scene Draw using Octree-aware traversal (if implemented) or default iteration[cite: 7]
                 mainScene.draw(m_window->getWidth(), m_window->getHeight());
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
             }
         }
 

@@ -1,30 +1,37 @@
 #ifndef __SCENE_HPP
 #define __SCENE_HPP
 
-#include "renderer/model.hpp"
-#include "renderer/shaders.hpp"
+#include <vector>
+#include <memory>
 
 #include "scene/camera.hpp"
 #include "scene/entity.hpp"
+#include "scene/spatial_index.hpp"
+#include "scene/aabb.hpp"
 
-namespace Engine{
-    namespace Scene{
-        class Scene{
-            public:
-                Scene(const Camera::Camera&);
-                ~Scene() = default;
+namespace Engine::Scene {
 
-                void update(float deltaTime); // done
-                void draw(float screenWidth, float screenHeight); 
+    class Scene {
+    public:
+        explicit Scene(const Camera::Camera& cam);
+        ~Scene() = default;
 
-                void addEntity(const Entity& entity); // done
+        void update(float deltaTime);
+        void draw(float screenWidth, float screenHeight);
 
-                Camera::Camera& getCamera() {return mCamera;}
+        void addEntity(std::unique_ptr<Entity> entity);
+        
+        void setSpatialIndex(std::unique_ptr<SpatialIndex> index);
+        SpatialIndex* getSpatialIndex() const { return mSpatialIndex.get(); }
 
-            private:
-                Camera::Camera mCamera;
-                std::vector<Entity> mEntities;
-        };
-    }
+        Camera::Camera& getCamera() { return mCamera; }
+
+    private:
+        Camera::Camera mCamera;
+        
+        std::vector<std::unique_ptr<Entity>> mEntities;
+        std::unique_ptr<SpatialIndex> mSpatialIndex;
+    };
 }
+
 #endif
