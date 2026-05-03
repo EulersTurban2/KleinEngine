@@ -15,6 +15,9 @@
 #include "resources/material_loader.hpp"
 #include "resources/resource_cache.hpp"
 
+// --- New Unified Renderer Include ---
+#include "renderer/renderer.hpp"
+
 #include <glm/gtc/type_ptr.hpp>
 #include <vector>
 #include <cmath>
@@ -26,7 +29,8 @@ namespace App {
     class App {
     public:
         App() {
-            m_window = new Engine::Core::Window(800, 600, "Klein Engine - Hyperbolic Octree Sandbox");
+            // Updated Window Title
+            m_window = new Engine::Core::Window(800, 600, "Klein Engine - Unified Renderer");
             if (!m_window->init()) {
                 LOG_CRITICAL("Failed to initialize application window."); 
             }
@@ -38,24 +42,20 @@ namespace App {
         }
 
         void run() {
+            
             GLFWwindow* nativeWin = m_window->getNativeWindow();
             INPUT::init(nativeWin);
-            glfwSetInputMode(nativeWin, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
             Engine::Core::Environment::get().loadConfig("engine.json");
             Engine::Core::Environment::get().bootResourceDatabase();
 
             auto& entityLoader = Engine::Resources::EntityLoader::getInstance();
 
-            // --- Scene & Spatial Index Orchestration ---
             Engine::Camera::Camera rCamera;
             Engine::Scene::Scene mainScene(rCamera);
 
-            // Initialize Octree with global world bounds[cite: 1, 6]
             Engine::Scene::AABB worldBounds{{0.0f, 0.0f, 0.0f}, {100.0f, 100.0f, 100.0f}};
             mainScene.setSpatialIndex(std::make_unique<Engine::Scene::Octree>(worldBounds, 8));
 
-            // 1. Setup Standard Cubes with pointer stability[cite: 8]
             std::vector<glm::vec3> startPositions = {
                 { 0.0f,  0.0f,  0.0f},   
                 { 2.0f,  2.0f, -15.0f},   
@@ -88,7 +88,6 @@ namespace App {
                 mainScene.addEntity(std::move(cubeInstance));
             }
 
-            // 2. Setup Light Source
             auto lightTemplate = entityLoader.getEntityTemplate("lightSource");
             if (lightTemplate) {
                 auto lightInstance = std::make_unique<Engine::Scene::Entity>(*lightTemplate);
@@ -101,37 +100,16 @@ namespace App {
                 mainScene.addEntity(std::move(lightInstance));
             }
 
-            glEnable(GL_DEPTH_TEST);
-            Engine::Core::Timer::init();
-
-            // --- MAIN LOOP ---
-            while (!m_window->shouldClose()) {
-                Engine::Core::Timer::update();
-                float deltaTime = Engine::Core::Timer::getDeltaTime();
-                
-                INPUT::Update();
-                m_window->onUpdate();
-
-                glClearColor(0.1f, 0.1f, 0.15f, 1.0f); 
-                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                auto& cam = mainScene.getCamera();
-                cam.handleInput(deltaTime); //[cite: 2]
-
-                // Scene Update (Synchronizes entities and Spatial Index)
-                mainScene.update(deltaTime);
-
-                // Lighting logic using hyperbolic state[cite: 2]
-                auto defaultMat = Engine::Resources::EntityLoader::getInstance().getMaterial("default");
-                if (defaultMat) {
-                    auto shader = defaultMat->getShader(); 
-                    shader->use(); 
-
-                    glm::mat4 view = cam.getViewMatrix();
+            // Material on bind callback
+            auto& cam = mainScene.getCamera();
+            auto defaultMat = Engine::Resources::EntityLoader::getInstance().getMaterial("default");
+             if (defaultMat) {
+                defaultMat->onUse = [](std::shared_ptr<Engine::Renderer::ShaderProgram> shader, const Engine::Renderer::RenderContext ctx) {
+                    glm::mat4 view = ctx.cam.getViewMatrix();
                     glm::vec3 lightOrigin = { 0.0f, 0.0f, -1.0f };
                     glm::vec4 lightWorldPos;
                     
-                    if (cam.getIsHyperbolic()) {
+                    if (ctx.cam.getIsHyperbolic()) {
                         float w = std::sqrt(1.0f + glm::dot(lightOrigin, lightOrigin)); 
                         lightWorldPos = glm::vec4(lightOrigin, w);
                     } else {
@@ -141,9 +119,22 @@ namespace App {
                     shader->setVec4("uLightPos", view * lightWorldPos);
                     shader->setFloat("uLightRadius", 40.0f);
                     shader->setVec3("uLightColor", glm::vec3(1.0f, 0.2f, 0.2f)); 
-                }
+                };
+            }
 
-                // Scene Draw using Octree-aware traversal (if implemented) or default iteration[cite: 7]
+            Engine::Renderer::Renderer::init();
+            Engine::Core::Timer::init();
+            while (!m_window->shouldClose()) {
+                Engine::Core::Timer::update();
+                float deltaTime = Engine::Core::Timer::getDeltaTime();
+                
+                INPUT::Update();
+                m_window->onUpdate();
+                
+                glClearColor(0.1f, 0.1f, 0.15f, 1.0f); 
+
+                cam.handleInput(deltaTime); 
+                mainScene.update(deltaTime);
                 mainScene.draw(m_window->getWidth(), m_window->getHeight());
             }
         }

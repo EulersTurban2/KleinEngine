@@ -11,6 +11,7 @@ namespace Engine{
 
         void InputManager::init(GLFWwindow* window){
             m_window = window;
+            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
 
         void InputManager::keyCallback(int key, int action){

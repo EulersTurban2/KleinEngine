@@ -1,16 +1,26 @@
 #ifndef __MATERIAL_HPP
 #define __MATERIAL_HPP
 
+#include "scene/camera.hpp"
 #include "renderer/texture.hpp"
 #include "renderer/shaders.hpp"
 
 #include <memory>
 #include <optional>
+#include <functional>
 #include <glm/glm.hpp>
 #include <unordered_map>
 
 namespace Engine{
     namespace Renderer{
+
+        struct RenderContext {
+            const Engine::Camera::Camera& cam;
+            float time;
+            float deltaTime;
+
+            // as the engine grows we will add more features here in the render context
+        };
 
         struct LightSpec{
             float ambient = 0.5f;
@@ -44,7 +54,7 @@ namespace Engine{
                 void apply() const;
 
                 std::shared_ptr<ShaderProgram> getShader() const {return mShader;}
-
+                std::function<void(std::shared_ptr<ShaderProgram>, const RenderContext)> onUse = nullptr;
             private:
                 std::shared_ptr<ShaderProgram> mShader;
                 std::unordered_map<TextureType, std::shared_ptr<Texture2D>> mTextures;

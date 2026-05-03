@@ -37,6 +37,7 @@ add_library(engine STATIC
     engine/renderer/mesh.cpp
     engine/renderer/model.cpp
     engine/renderer/material.cpp
+    engine/renderer/renderer.cpp
     engine/resources/entity_loader.cpp
     engine/resources/model_loader.cpp
     engine/resources/material_loader.cpp
@@ -77,7 +78,6 @@ endif()
 # The main application entry point and logic
 add_executable(KleinEngine 
     app/main.cpp 
-    app/app.cpp
 )
 
 # Include path for the app-layer headers

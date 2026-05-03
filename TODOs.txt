@@ -1,1 +1,2 @@
-## REwrite in resource_database the getters and setters
+## Rewrite in resource_database the getters and setters
+### Enable engine.json reading of background and cubemap

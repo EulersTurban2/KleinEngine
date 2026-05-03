@@ -1,5 +1,6 @@
 #include "scene/scene.hpp"
 #include "renderer/material.hpp"
+#include "renderer/renderer.hpp"
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine::Scene {
@@ -38,25 +39,12 @@ namespace Engine::Scene {
     }
 
     void Scene::draw(float screenWidth, float screenHeight) {
-        glm::mat4 view = mCamera.getViewMatrix();
-        glm::mat4 projection = mCamera.getProjectionMatrix(screenWidth, screenHeight);
-        bool isHyp = mCamera.getIsHyperbolic(); 
-
+        Engine::Renderer::Renderer::beginScene(mCamera, screenWidth, screenHeight);
         for (const auto& ent : mEntities) {
             if (!ent->model || !ent->material) continue;
 
-            auto shader = ent->material->getShader();
-            
-            ent->material->apply();
-            shader->use();
-
-            shader->setMat4("uView", view);
-            shader->setMat4("uProj", projection);
-            shader->setBool("uIsHyperbolic", isHyp);
-
-            shader->setMat4("uModel", ent->transform.getModelMatrix());
-
-            ent->model->draw(*shader);
+            Engine::Renderer::Renderer::submit(ent->model, ent->material, ent->transform.getModelMatrix());
         }
+        Engine::Renderer::Renderer::endScene();
     }
 }
