@@ -1,22 +1,24 @@
 #include "uniform_grid.hpp"
 
+#include <algorithm>
 #include <glm/gtx/norm.hpp>
 
-void Engine::Scene::UniformGrid::insert(Entity *entity)
+void Engine::Scene::UniformGrid::insert(uint32_t entity, const glm::vec3& position)
 {
-    glm::ivec3 cell = getCellCoords(entity->transform.position);
-    mCells[cell].push_back(entity);
+    glm::ivec3 cell = getCellCoords(position);
+    mCells[cell].push_back({entity, position});
     mEntityCellMap[entity] = cell;
 }
 
-void Engine::Scene::UniformGrid::remove(Entity *entity)
+void Engine::Scene::UniformGrid::remove(uint32_t entity)
 {
     auto it = mEntityCellMap.find(entity);
     if (it != mEntityCellMap.end())
     {
         glm::ivec3 cell = it->second;
         auto& cellVector = mCells[cell];
-        cellVector.erase(std::remove(cellVector.begin(), cellVector.end(), entity), cellVector.end());
+        cellVector.erase(std::remove_if(cellVector.begin(), cellVector.end(), 
+            [entity](const SpatialItem& item) { return item.id == entity; }), cellVector.end());
         mEntityCellMap.erase(it);
 
         if (cellVector.empty())
@@ -27,25 +29,32 @@ void Engine::Scene::UniformGrid::remove(Entity *entity)
     
 }
 
-void Engine::Scene::UniformGrid::update(Entity *entity)
+void Engine::Scene::UniformGrid::update(uint32_t entity, const glm::vec3& position)
 {
-    glm::ivec3 newCell = getCellCoords(entity->transform.position);
+    glm::ivec3 newCell = getCellCoords(position);
 
     auto it = mEntityCellMap.find(entity);
     if (it != mEntityCellMap.end()) {
         glm::ivec3 oldCell = it->second;
         if (newCell != oldCell) {
             remove(entity);
-            insert(entity);
+            insert(entity,position);
+        } else {
+            for (auto& item : mCells[oldCell]) {
+                if (item.id == entity) {
+                    item.position = position;
+                    break;
+                }
+            }
         }
     } else {
-        insert(entity);
+        insert(entity, position);
     }
 }
 
-std::vector<Engine::Scene::Entity*> Engine::Scene::UniformGrid::query(const glm::vec3 &position, float radius)
+std::vector<uint32_t> Engine::Scene::UniformGrid::query(const glm::vec3 &position, float radius)
 {
-    std::vector<Entity*> found;
+    std::vector<uint32_t> found;
     glm::vec3 minBound = position - glm::vec3(radius);
     glm::vec3 maxBound = position + glm::vec3(radius);
 
@@ -58,18 +67,17 @@ std::vector<Engine::Scene::Entity*> Engine::Scene::UniformGrid::query(const glm:
         {
             for (int z = minCell.z; z < maxCell.z; z++)
             {
-                glm::ivec3 currCell(x,y,z);
-                
-                auto it = mCells.find(currCell);
+                auto it = mCells.find(glm::ivec3(x,y,z));
                 if (it != mCells.end())
                 {
-                    for(auto& entity : it->second){
-                        float distSq = glm::distance2(position, entity->transform.position);
-                        if (distSq <= (radius * radius)) {
-                            found.push_back(entity);
+                    for(const auto& item : it->second) {
+                        if (glm::distance2(position, item.position) <= (radius * radius))
+                        {
+                            found.push_back(item.id);
                         }
                     }
                 }
+                
             }
         }
     }

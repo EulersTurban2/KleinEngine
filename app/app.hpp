@@ -8,14 +8,14 @@
 #include "scene/camera.hpp" 
 #include "scene/entity.hpp"  
 #include "scene/scene.hpp"  
-#include "scene/octree.hpp"      
+#include "scene/octree.hpp"
+#include "scene/components.hpp" // Crucial for ECS data access
 #include "math/lorentz.hpp"
 #include "core/enviroment.hpp"
 #include "resources/entity_loader.hpp"
 #include "resources/material_loader.hpp"
 #include "resources/resource_cache.hpp"
 
-// --- New Unified Renderer Include ---
 #include "renderer/renderer.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -29,8 +29,7 @@ namespace App {
     class App {
     public:
         App() {
-            // Updated Window Title
-            m_window = new Engine::Core::Window(800, 600, "Klein Engine - Unified Renderer");
+            m_window = new Engine::Core::Window(800, 600, "Klein Engine - ECS Powered");
             if (!m_window->init()) {
                 LOG_CRITICAL("Failed to initialize application window."); 
             }
@@ -42,9 +41,9 @@ namespace App {
         }
 
         void run() {
-            
             GLFWwindow* nativeWin = m_window->getNativeWindow();
             INPUT::init(nativeWin);
+            
             Engine::Core::Environment::get().loadConfig("engine.json");
             Engine::Core::Environment::get().bootResourceDatabase();
 
@@ -63,47 +62,79 @@ namespace App {
                 {-3.8f, -2.0f, -12.3f}   
             };
 
+            // Store IDs for our main loop scripting
+            std::vector<uint32_t> cubeIDs;
+
             for (size_t i = 0; i < startPositions.size(); i++) {
-                auto cubeInstance = std::make_unique<Engine::Scene::Entity>(entityLoader.instantiate("cube"));
-                cubeInstance->name = "Cube_" + std::to_string(i);
-                cubeInstance->transform.position = startPositions[i];
+                // Instantiate directly into the scene using the new ECS loader
+                auto cube = entityLoader.instantiate("cube", mainScene);
                 
+                auto& transform = cube.getComponent<Engine::Scene::TransformComponent>();
+                transform.position = startPositions[i];
+                
+                auto& tag = cube.getComponent<Engine::Scene::TagComponent>();
+                tag.name = "Cube_" + std::to_string(i);
+
                 if (i == 0) {
-                    cubeInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
-                        self.transform.position.y = glm::sin(glfwGetTime()) * 2.0f;
-                        self.transform.rotation.y += 45.0f * dt; 
-                    };
+                    cube.addComponent<Engine::Scene::NativeScriptComponent>(
+                        Engine::Scene::NativeScriptComponent{
+                            [](Engine::Scene::Entity& self, float dt) {
+                                auto& t = self.getComponent<Engine::Scene::TransformComponent>();
+                                t.position.y = glm::sin(glfwGetTime()) * 2.0f;
+                                t.rotation.y += 45.0f * dt; 
+                            }
+                        }
+                    );
                 } else if (i == 1) {
-                    cubeInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
-                        self.transform.rotation.x += 200.0f * dt;
-                        self.transform.rotation.z += 3000.0f * dt;
-                    };
+                    cube.addComponent<Engine::Scene::NativeScriptComponent>(
+                        Engine::Scene::NativeScriptComponent{
+                            [](Engine::Scene::Entity& self, float dt) {
+                                auto& t = self.getComponent<Engine::Scene::TransformComponent>();
+                                t.rotation.x += 200.0f * dt;
+                                t.rotation.z += 3000.0f * dt;
+                            }
+                        }
+                    );
                 } else if (i == 2) {
-                    cubeInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
-                        self.transform.scale.x = glm::sin(glfwGetTime()) * 2.0f;
-                        self.transform.scale.z = glm::sin(glfwGetTime()) * 2.0f;
-                    };
+                    cube.addComponent<Engine::Scene::NativeScriptComponent>(
+                        Engine::Scene::NativeScriptComponent{
+                            [](Engine::Scene::Entity& self, float dt) {
+                                auto& t = self.getComponent<Engine::Scene::TransformComponent>();
+                                t.scale.x = glm::sin(glfwGetTime()) * 2.0f;
+                                t.scale.z = glm::sin(glfwGetTime()) * 2.0f;
+                            }
+                        }
+                    );
                 }
-                
-                mainScene.addEntity(std::move(cubeInstance));
+
+                cubeIDs.push_back(cube.getId());
             }
 
-            auto lightTemplate = entityLoader.getEntityTemplate("lightSource");
-            if (lightTemplate) {
-                auto lightInstance = std::make_unique<Engine::Scene::Entity>(*lightTemplate);
-                lightInstance->name = "MainLight";
-                lightInstance->transform.position = { 0.0f, 0.0f, -1.0f };
+            uint32_t lightID = 0;
+            auto lightInstance = entityLoader.instantiate("lightSource", mainScene);
+            if (lightInstance.getId() != 0) {
+                auto& transform = lightInstance.getComponent<Engine::Scene::TransformComponent>();
+                transform.position = { 0.0f, 0.0f, -1.0f };
                 
-                lightInstance->onUpdate = [](Engine::Scene::Entity& self, float dt) {
-                    self.transform.rotation.x += 30.0f * dt;
-                };
-                mainScene.addEntity(std::move(lightInstance));
+                auto& tag = lightInstance.getComponent<Engine::Scene::TagComponent>();
+                tag.name = "MainLight";
+                
+                lightInstance.addComponent<Engine::Scene::NativeScriptComponent>(
+                    Engine::Scene::NativeScriptComponent{
+                        [](Engine::Scene::Entity& self, float dt) {
+                            auto& t = self.getComponent<Engine::Scene::TransformComponent>();
+                            t.rotation.x += 30.0f * dt;
+                        }
+                    }
+                );
+
+                lightID = lightInstance.getId();
             }
 
             // Material on bind callback
             auto& cam = mainScene.getCamera();
             auto defaultMat = Engine::Resources::EntityLoader::getInstance().getMaterial("default");
-             if (defaultMat) {
+            if (defaultMat) {
                 defaultMat->onUse = [](std::shared_ptr<Engine::Renderer::ShaderProgram> shader, const Engine::Renderer::RenderContext ctx) {
                     glm::mat4 view = ctx.cam.getViewMatrix();
                     glm::vec3 lightOrigin = { 0.0f, 0.0f, -1.0f };
@@ -124,6 +155,7 @@ namespace App {
 
             Engine::Renderer::Renderer::init();
             Engine::Core::Timer::init();
+
             while (!m_window->shouldClose()) {
                 Engine::Core::Timer::update();
                 float deltaTime = Engine::Core::Timer::getDeltaTime();
@@ -134,6 +166,7 @@ namespace App {
                 glClearColor(0.1f, 0.1f, 0.15f, 1.0f); 
 
                 cam.handleInput(deltaTime); 
+
                 mainScene.update(deltaTime);
                 mainScene.draw(m_window->getWidth(), m_window->getHeight());
             }

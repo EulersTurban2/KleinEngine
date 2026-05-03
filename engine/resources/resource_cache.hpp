@@ -130,35 +130,12 @@ namespace Engine
                     return mMaterials[matName];
                 }
 
-                // Entity
-
-                bool hasEntity(const std::string& entityName) {
-                    return mEntities.find(entityName) != mEntities.end();
-                }
-
-                void addEntity(const std::string& entityName, std::shared_ptr<Engine::Scene::Entity> entity) {
-                    if (!hasEntity(entityName)) {
-                        mEntities[entityName] = entity;
-                    } else {
-                        LOG_WARN("Entity template " + entityName + " already exists");
-                    }
-                }
-
-                std::shared_ptr<Engine::Scene::Entity> getEntity(const std::string& entityName) {
-                    if (!hasEntity(entityName)) {
-                        LOG_ERROR("There isn't an entity of " + entityName + " name");
-                        return nullptr;
-                    }
-                    return mEntities[entityName];
-                }
-
                 // Ciscenje
                 void clearAll() {
                     mTextures.clear();
                     mModels.clear();
                     mShaders.clear();
                     mMaterials.clear();
-                    mEntities.clear();
                 }
 
                 ResourceCache() = default;
@@ -171,7 +148,6 @@ namespace Engine
                 std::unordered_map<std::string, std::shared_ptr<Engine::Renderer::Model>> mModels;
                 std::unordered_map<std::string, std::shared_ptr<Engine::Renderer::ShaderProgram>> mShaders;
                 std::unordered_map<std::string, std::shared_ptr<Engine::Renderer::Material>> mMaterials;
-                std::unordered_map<std::string, std::shared_ptr<Engine::Scene::Entity>> mEntities;
         };
     } 
 } 

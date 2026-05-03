@@ -1,18 +1,24 @@
 #include "scene/scene.hpp"
-#include "renderer/material.hpp"
+#include "scene/entity.hpp"
+#include "scene/components.hpp"
 #include "renderer/renderer.hpp"
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace Engine::Scene {
 
-    Scene::Scene(const Camera::Camera& cam) : mCamera(cam), mSpatialIndex(nullptr) {}
+    Scene::Scene(Camera::Camera& cam) : mCamera(cam), mSpatialIndex(nullptr) {}
 
-    void Scene::addEntity(std::unique_ptr<Entity> entity) {
+    Entity Scene::createEntity(const std::string& name) {
+        uint32_t handle = m_Registry.createEntity();
+        Entity entity(handle, this);
+
+        entity.addComponent<TransformComponent>();
+        entity.addComponent<TagComponent>(TagComponent{name});
+
         if (mSpatialIndex) {
-            mSpatialIndex->insert(entity.get());
+            mSpatialIndex->insert(handle, glm::vec3(0.0f));
         }
-        
-        mEntities.push_back(std::move(entity));
+
+        return entity;
     }
 
     void Scene::setSpatialIndex(std::unique_ptr<SpatialIndex> index) {
@@ -20,31 +26,53 @@ namespace Engine::Scene {
         
         if (mSpatialIndex) {
             mSpatialIndex->clear();
-            for (auto& ent : mEntities) {
-                mSpatialIndex->insert(ent.get());
+            
+            auto entities = m_Registry.view<TransformComponent>();
+            for (uint32_t id : entities) {
+                auto& transform = m_Registry.getComponent<TransformComponent>(id);
+                mSpatialIndex->insert(id, transform.position);
             }
         }
     }
 
     void Scene::update(float deltaTime) {
-        for (auto& ent : mEntities) {
-            if (ent->onUpdate) {
-                ent->onUpdate(*ent, deltaTime);
-            }
 
-            if (mSpatialIndex) {
-                mSpatialIndex->update(ent.get());
+        auto scripts = m_Registry.view<NativeScriptComponent>();
+        for (uint32_t id : scripts) {
+            auto& script = m_Registry.getComponent<NativeScriptComponent>(id);
+            if (script.onUpdate) {
+                Entity entity(id, this);
+                script.onUpdate(entity, deltaTime);
+            }
+        }
+
+        if (mSpatialIndex) {
+            auto entities = m_Registry.view<TransformComponent>();
+            for (uint32_t id : entities) {
+                auto& transform = m_Registry.getComponent<TransformComponent>(id);
+                
+                mSpatialIndex->update(id, transform.position); 
             }
         }
     }
 
     void Scene::draw(float screenWidth, float screenHeight) {
         Engine::Renderer::Renderer::beginScene(mCamera, screenWidth, screenHeight);
-        for (const auto& ent : mEntities) {
-            if (!ent->model || !ent->material) continue;
 
-            Engine::Renderer::Renderer::submit(ent->model, ent->material, ent->transform.getModelMatrix());
+        auto renderables = m_Registry.view<MeshRendererComponent>();
+
+        for (uint32_t id : renderables) {
+            if (m_Registry.hasComponent<TransformComponent>(id)) {
+                
+                auto& mesh = m_Registry.getComponent<MeshRendererComponent>(id);
+                auto& transform = m_Registry.getComponent<TransformComponent>(id);
+
+                if (mesh.model && mesh.material) {
+                    Engine::Renderer::Renderer::submit(mesh.model, mesh.material, transform.getModelMatrix());
+                }
+            }
         }
+
         Engine::Renderer::Renderer::endScene();
     }
 }

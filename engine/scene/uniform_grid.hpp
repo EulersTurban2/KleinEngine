@@ -15,17 +15,17 @@ namespace Engine::Scene {
     public:
         explicit UniformGrid(float cellSize = 2.0f) : mCellSize(cellSize) {}
 
-        void insert(Entity* entity) override;
-        void remove(Entity* entity) override;
-        void update(Entity* entity) override;
+        void insert(uint32_t entity, const glm::vec3& position) override;
+        void remove(uint32_t entity) override;
+        void update(uint32_t entity, const glm::vec3& position) override;
         
-        std::vector<Entity*> query(const glm::vec3& position, float radius) override;
+        std::vector<uint32_t> query(const glm::vec3& position, float radius) override;
         void clear() override { mCells.clear(); mEntityCellMap.clear(); }
 
     private:
         float mCellSize;
-        std::unordered_map<Entity*, glm::ivec3> mEntityCellMap;
-        std::unordered_map<glm::ivec3, std::vector<Entity*>, CellHash> mCells;
+        std::unordered_map<uint32_t, glm::ivec3> mEntityCellMap;
+        std::unordered_map<glm::ivec3, std::vector<SpatialItem>, CellHash> mCells;
 
         glm::ivec3 getCellCoords(const glm::vec3& pos) const {
             return { std::floor(pos.x / mCellSize), 

@@ -5,6 +5,8 @@
 #include "aabb.hpp"
 #include <array>
 #include <memory>
+#include <cstdint>
+#include <unordered_map>
 
 namespace Engine::Scene {
 
@@ -12,13 +14,13 @@ namespace Engine::Scene {
     public:
         Octree(const AABB& boundary, int capacity = 8) : mBoundary(boundary), mCapacity(capacity), mParent(nullptr) {}
 
-        void insert(Entity* entity) override;
-        void remove(Entity* entity) override;
-        void update(Entity* entity) override;
+        void insert(uint32_t entity, const glm::vec3& position) override;
+        void remove(uint32_t entity) override;
+        void update(uint32_t entity, const glm::vec3& position) override;
         void clear() override;
 
-        std::vector<Entity*> query(const glm::vec3& position, float radius) override;
-        std::vector<Entity*> query(const AABB& range);
+        std::vector<uint32_t> query(const glm::vec3& position, float radius) override;
+        std::vector<uint32_t> query(const AABB& range);
 
     private:
         void subdivide();
@@ -31,11 +33,10 @@ namespace Engine::Scene {
         Octree* mParent;
         bool mDivided = false;
 
-        std::vector<Entity*> mEntities;
+        std::vector<SpatialItem> mItems;
         std::array<std::unique_ptr<Octree>, 8> mChildren;
 
-
-        static std::unordered_map<Entity*, Octree*> sEntityNodeMap;
+        static std::unordered_map<uint32_t, Octree*> sEntityNodeMap;
     };
 }
 #endif

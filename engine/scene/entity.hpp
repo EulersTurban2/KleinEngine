@@ -1,44 +1,42 @@
 #ifndef __ENTITY_HPP
 #define __ENTITY_HPP
 
-#include <memory>
-#include <string>
-#include <functional>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <cstdint>
+#include <utility>
+#include "registry.hpp"
+#include "scene/scene.hpp"
 
-#include "renderer/model.hpp"
-#include "renderer/material.hpp" // Replaced shaders.hpp with material.hpp
+namespace Engine::Scene {
 
-namespace Engine{
-    namespace Scene{
+    class Scene; 
 
-        struct Transform{
-            glm::vec3 position = glm::vec3(0.0f);
-            glm::vec3 rotation = glm::vec3(0.0f);
-            glm::vec3 scale = glm::vec3(1.0f);
+    class Entity {
+    public:
+        Entity() = default;
+        Entity(uint32_t handle, Scene* scene) : mEntityHandle(handle), mScene(scene) {}
 
-            glm::mat4 getModelMatrix() const {
-                glm::mat4 mat(1.0f);
-                mat = glm::translate(mat, position);
-                mat = glm::rotate(mat, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-                mat = glm::rotate(mat, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-                mat = glm::rotate(mat, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-                mat = glm::scale(mat, scale);
-                return mat;
-            };
-        };
+        template<typename T, typename... Args>
+        T& addComponent(Args&&... args){
+            mScene->getRegistry().addComponent<T>(mEntityHandle, T{std::forward<Args>(args)...});
+            return getComponent<T>();
+        }
 
-        struct Entity{
-            std::string name;
-            Transform transform;
+        template<typename T>
+        T& getComponent() {
+            return mScene->getRegistry().getComponent<T>(mEntityHandle);
+        }
 
-            std::shared_ptr<Renderer::Model> model;
-            std::shared_ptr<Renderer::Material> material;
+        template<typename T>
+        bool hasComponent() {
+            return mScene->getRegistry().hasComponent<T>(mEntityHandle);
+        }
 
-            std::function<void(Entity&, float)> onUpdate = nullptr;
-        };
-    }
+        uint32_t getId() const { return mEntityHandle; }
+
+    private:
+        uint32_t mEntityHandle = 0; 
+        Scene* mScene = nullptr;
+    };
 }
 
-#endif
+#endif 
