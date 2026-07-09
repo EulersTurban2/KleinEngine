@@ -13,6 +13,14 @@ namespace Engine::Lorentz {
         return a.x * b.x + a.y * b.y + a.z * b.z - a.w * b.w;
     }
 
+    // Geodesic midpoint of two points on the hyperboloid: the Minkowski-
+    // normalized sum, i.e. the hyperbolic analog of the spherical midpoint
+    // normalize(a + b). Equal to the hyperbolic-slerp evaluated at t = 1/2.
+    inline glm::vec4 geodesicMidpoint(const glm::vec4& a, const glm::vec4& b) {
+        glm::vec4 m = a + b;
+        return m / std::sqrt(std::max(-minkowskiDot(m, m), 1e-12f));
+    }
+
     inline float gamma(float v) {
         float beta = v / SPEED_OF_LIGHT;
         return 1.0f / std::sqrt(1.0f - beta * beta);

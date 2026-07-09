@@ -59,7 +59,7 @@ namespace Engine::Math {
         switch (model) {
             case HyperbolicProjection::Poincare: return hyperboloidToPoincare(X);
             case HyperbolicProjection::Klein:
-            case HyperbolicProjection::HalfSpace:
+            case HyperbolicProjection::HalfSpace: // tmp resorts to Klein until HalfSpace is implemented
             default:                             return hyperboloidToKlein(X);
         }
     }
@@ -68,7 +68,7 @@ namespace Engine::Math {
         switch (model) {
             case HyperbolicProjection::Poincare: return poincareToHyperboloid(v);
             case HyperbolicProjection::Klein:
-            case HyperbolicProjection::HalfSpace:
+            case HyperbolicProjection::HalfSpace: // tmp resorts to Klein until HalfSpace is implemented
             default:                             return kleinToHyperboloid(v);
         }
     }

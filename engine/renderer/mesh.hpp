@@ -7,11 +7,12 @@
 namespace Engine::Renderer {
 
     struct Vertex {
-        glm::vec3 position{0.0f};
+        glm::vec3 position{0.0f};      // flat model position: used by the Euclidean path
         glm::vec3 normal{0.0f};
         glm::vec2 texCoords{0.0f};
         glm::vec3 tangent{0.0f};
         glm::vec3 bitangent{0.0f};
+        glm::vec3 hyperPosition{0.0f}; // geodesic position: used by the hyperbolic path
     };
 
     class Mesh {

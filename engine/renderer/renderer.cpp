@@ -9,11 +9,16 @@
 namespace Engine::Renderer {
 
     Renderer::SceneData Renderer::sSceneData;
+    Engine::Math::HyperbolicProjection Renderer::sProjectionModel = Engine::Math::HyperbolicProjection::Klein;
     std::vector<RenderCommand> Renderer::sOpaqueCommands;
     std::vector<RenderCommand> Renderer::sTransparentCommands;
 
     void Renderer::init() {
         glEnable(GL_DEPTH_TEST);
+    }
+
+    void Renderer::setProjectionModel(Engine::Math::HyperbolicProjection model) {
+        sProjectionModel = model;
     }
 
     void Renderer::beginScene(const Scene::Camera& camera, float screenWidth, float screenHeight) {
@@ -63,6 +68,7 @@ namespace Engine::Renderer {
             shader->setMat4("uView", sSceneData.viewMatrix);
             shader->setMat4("uProj", sSceneData.projectionMatrix);
             shader->setBool("uIsHyperbolic", sSceneData.isHyperbolic);
+            shader->setInt("uProjectionModel", static_cast<int>(sProjectionModel));
             shader->setMat4("uModel", cmd.transformMatrix);
 
             if (cmd.material->onUse != nullptr) {

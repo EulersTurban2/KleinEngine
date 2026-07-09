@@ -1,11 +1,16 @@
 #include "model.hpp"
 #include "core/logger.hpp"
+#include "renderer/tessellate.hpp"
 
 #include <assimp/Importer.hpp>
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
 namespace Engine::Renderer {
+
+    // Geodesic subdivision depth applied to every loaded mesh (2^level segments
+    // per edge). Keeps Poincare/Klein edges smooth; a cube (12 tris) -> 768.
+    static constexpr int kHyperbolicTessLevel = 3;
 
     Model::Model(const std::string& path) {
         loadModel(path);
@@ -46,6 +51,9 @@ namespace Engine::Renderer {
             // Vertex members default to zero; only present attributes are filled in.
             Vertex vert;
             vert.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
+            // Original vertices coincide in both spaces; tessellation splits the
+            // flat and geodesic tracks apart from here.
+            vert.hyperPosition = vert.position;
 
             if (mesh->HasNormals()) {
                 vert.normal = glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z);
@@ -69,6 +77,10 @@ namespace Engine::Renderer {
                 indices.push_back(face.mIndices[j]);
             }
         }
+
+        // Subdivide along hyperboloid geodesics so curved (Poincare) edges stay
+        // smooth. The vertex shader still just lifts + flattens each vertex.
+        tessellateHyperbolic(vertices, indices, kHyperbolicTessLevel);
 
         return Mesh(vertices, indices);
     }

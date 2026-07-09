@@ -86,6 +86,10 @@ namespace Engine::Renderer {
         glEnableVertexAttribArray(4);
         glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
 
+        // Attribute 5: Hyperbolic (geodesic) position
+        glEnableVertexAttribArray(5);
+        glVertexAttribPointer(5, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, hyperPosition));
+
         glBindVertexArray(0);
     }
 }

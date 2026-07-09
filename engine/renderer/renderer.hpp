@@ -7,6 +7,7 @@
 #include "scene/camera.hpp"
 #include "renderer/model.hpp"
 #include "renderer/material.hpp"
+#include "math/projections.hpp"
 
 namespace Engine::Renderer {
 
@@ -25,6 +26,10 @@ namespace Engine::Renderer {
             static void submit(std::shared_ptr<Model> model, std::shared_ptr<Material> material, const glm::mat4& transformMatrix);
             static void endScene();
 
+            // Which flattening of the hyperboloid the vertex shaders use.
+            // Persists across frames until changed (e.g. from the UI dropdown).
+            static void setProjectionModel(Engine::Math::HyperbolicProjection model);
+
             // Draws a screen-covering quad; intended for post-processing passes.
             static void renderFullscreenQuad();
 
@@ -40,6 +45,7 @@ namespace Engine::Renderer {
             static void flush();
 
             static SceneData sSceneData;
+            static Engine::Math::HyperbolicProjection sProjectionModel;
 
             static std::vector<RenderCommand> sOpaqueCommands;
             // Reserved for the planned transparency pass; nothing submits here yet.
