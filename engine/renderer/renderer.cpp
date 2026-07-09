@@ -2,14 +2,34 @@
 #include "core/timer.hpp"
 
 #include <algorithm>
+#include <glm/gtc/matrix_transform.hpp>
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 namespace Engine::Renderer {
 
+    namespace {
+        // The upper half-space is unbounded, so the orthographic ball projection
+        // doesn't fit it. Instead we view it with an ordinary perspective camera
+        // orbiting a target: height h (the flattened point's .z) is "up", the
+        // boundary plane sits at h = 0, and the hyperbolic origin maps to (0,0,1).
+        glm::mat4 halfSpaceProjection(float aspect, const Renderer::HalfSpaceView& v) {
+            float az = glm::radians(v.azimuth);
+            float el = glm::radians(v.elevation);
+            glm::vec3 center(0.0f, 0.0f, v.targetHeight);
+            glm::vec3 dir(glm::sin(az) * glm::cos(el), -glm::cos(az) * glm::cos(el), glm::sin(el));
+            glm::vec3 eye = center + v.distance * dir;
+            glm::vec3 up(0.0f, 0.0f, 1.0f);
+            glm::mat4 view = glm::lookAt(eye, center, up);
+            glm::mat4 proj = glm::perspective(glm::radians(v.fov), aspect, 0.05f, 100.0f);
+            return proj * view;
+        }
+    }
+
     Renderer::SceneData Renderer::sSceneData;
     Engine::Math::HyperbolicProjection Renderer::sProjectionModel = Engine::Math::HyperbolicProjection::Klein;
+    Renderer::HalfSpaceView Renderer::sHalfSpaceView;
     std::vector<RenderCommand> Renderer::sOpaqueCommands;
     std::vector<RenderCommand> Renderer::sTransparentCommands;
 
@@ -23,7 +43,16 @@ namespace Engine::Renderer {
 
     void Renderer::beginScene(const Scene::Camera& camera, float screenWidth, float screenHeight) {
         sSceneData.viewMatrix = camera.getViewMatrix();
-        sSceneData.projectionMatrix = camera.getProjectionMatrix(screenWidth, screenHeight);
+
+        // Half-space needs its own perspective projection; the other models use
+        // the camera's (orthographic ball / Euclidean perspective) matrix.
+        if (camera.getIsHyperbolic() && sProjectionModel == Engine::Math::HyperbolicProjection::HalfSpace) {
+            float aspect = screenHeight > 0.0f ? screenWidth / screenHeight : 1.0f;
+            sSceneData.projectionMatrix = halfSpaceProjection(aspect, sHalfSpaceView);
+        } else {
+            sSceneData.projectionMatrix = camera.getProjectionMatrix(screenWidth, screenHeight);
+        }
+
         sSceneData.cameraPosition = camera.getPosition();
         sSceneData.isHyperbolic = camera.getIsHyperbolic();
         sSceneData.cam = &camera;

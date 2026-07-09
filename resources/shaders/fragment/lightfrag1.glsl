@@ -11,16 +11,18 @@ struct LightSourceSpec {
 };
 
 uniform bool uIsHyperbolic;
+uniform int uProjectionModel; // Klein=0, Poincare=1, HalfSpace=2
 uniform LightSourceSpec uLightSourceSpec;
 
 void main() {
     FragColor = vec4(uLightSourceSpec.color * uLightSourceSpec.intensity, 1.0);
 
-    if (uIsHyperbolic) {
+    if (uIsHyperbolic && uProjectionModel != 2) {
         float safeW = max(vFragPos.w, 1.0);
         float trueDist = acosh(safeW);
         gl_FragDepth = clamp(trueDist / 10.0, 0.0, 1.0);
     } else {
+        // Euclidean and half-space both use ordinary projected depth.
         gl_FragDepth = gl_FragCoord.z;
     }
 }

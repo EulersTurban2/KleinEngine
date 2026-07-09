@@ -90,7 +90,7 @@ namespace Engine::Renderer {
             indices = std::move(outIndices);
         }
 
-    } // namespace detail
+    } // namespace Tessallator
 
     // Geodesic-subdivide the mesh `level` times (2^level segments per edge).
     // level <= 0 leaves the mesh untouched.

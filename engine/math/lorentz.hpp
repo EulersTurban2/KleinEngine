@@ -1,9 +1,33 @@
 #ifndef LORENTZ_HPP
 #define LORENTZ_HPP
 
-// Lorentz transformations used to move through hyperbolic space.
 #include <cmath>
 #include <glm/glm.hpp>
+
+/**  
+    Lorentz transformations used to move through hyperbolic space.
+
+    Each projection of the hyperbolic space is practically a mapping from a 4D hyperboloid onto a 3D surface.
+    The hyperboloid is a 4D surface defined by the equation:
+        x^2 + y^2 + z^2 - w^2 = -1
+    where (x, y, z) are the spatial coordinates and w is the time-like coordinate, with this we also equip ourselves with the Minkowski metric, 
+    which is used to measure distances in this space. The metric is defined as follows:
+        ds^2 = dx^2 + dy^2 + dz^2 - dw^2
+
+    The Lorentz transformations are used to move through this hyperbolic space. We can think of them as a way to change our point of view in the hyperbolic space, 
+    allowing us to move and rotate our perspective. The Lorentz transformations are represented by 4x4 matrices that operate on 4D vectors (x, y, z, w) in the hyperboloid model.
+    The transformations include:
+        - Boosts: These are transformations that change the velocity of the observer in a specific direction. 
+          They are parameterized by rapidity, which is a measure of the "distance" moved in hyperbolic space. The rapidity is related to the velocity by the formula:
+              beta = tanh(rapidity)
+          where beta is the velocity as a fraction of the speed of light. The boosts are defined for each of the three spatial axes (x, y, z).
+        - Rotations: These are transformations that rotate the observer's perspective around a specific axis.
+    The Lorentz transformations preserve the Minkowski metric, meaning that the "distance" between points in hyperbolic space remains the same after applying a Lorentz transformation. This is crucial for maintaining
+    the geometric properties of hyperbolic space as we move through it. The mathematical background can be found in the documenation of the Lorentz namespace (TODO: add link to documentation).
+
+
+*/
+
 
 namespace Engine::Lorentz {
 
@@ -26,47 +50,53 @@ namespace Engine::Lorentz {
         return 1.0f / std::sqrt(1.0f - beta * beta);
     }
 
-    // Boost along the x axis
-    inline glm::mat4 lorentzBoostX(float v) {
-        float beta = v / SPEED_OF_LIGHT;
-        float g = gamma(v);
+    // The boosts below are parameterized by RAPIDITY (hyperbolic arc length),
+    // not velocity beta. Rapidity is the natural "distance moved" parameter:
+    // it adds linearly (boost(a)*boost(a) = boost(2a)), so movement is uniform
+    // and frame-rate independent, and cosh/sinh stay finite at any speed (no
+    // beta -> 1 singularity). Recover velocity via beta = tanh(rapidity).
+
+    // Boost along the x axis by the given rapidity.
+    inline glm::mat4 lorentzBoostX(float rapidity) {
+        float ch = std::cosh(rapidity);
+        float sh = std::sinh(rapidity);
 
         glm::mat4 m(1.0f);
 
-        m[0][0] =  g;
-        m[0][3] = -g * beta;
-        m[3][0] = -g * beta;
-        m[3][3] =  g;
+        m[0][0] =  ch;
+        m[0][3] = -sh;
+        m[3][0] = -sh;
+        m[3][3] =  ch;
 
         return m;
     }
 
-    // Boost along the y axis
-    inline glm::mat4 lorentzBoostY(float v) {
-        float beta = v / SPEED_OF_LIGHT;
-        float g = gamma(v);
+    // Boost along the y axis by the given rapidity.
+    inline glm::mat4 lorentzBoostY(float rapidity) {
+        float ch = std::cosh(rapidity);
+        float sh = std::sinh(rapidity);
 
         glm::mat4 m(1.0f);
 
-        m[1][1] =  g;
-        m[1][3] = -g * beta;
-        m[3][1] = -g * beta;
-        m[3][3] =  g;
+        m[1][1] =  ch;
+        m[1][3] = -sh;
+        m[3][1] = -sh;
+        m[3][3] =  ch;
 
         return m;
     }
 
-    // Boost along the z axis
-    inline glm::mat4 lorentzBoostZ(float v) {
-        float beta = v / SPEED_OF_LIGHT;
-        float g = gamma(v);
+    // Boost along the z axis by the given rapidity.
+    inline glm::mat4 lorentzBoostZ(float rapidity) {
+        float ch = std::cosh(rapidity);
+        float sh = std::sinh(rapidity);
 
         glm::mat4 m(1.0f);
 
-        m[2][2] =  g;
-        m[2][3] = -g * beta;
-        m[3][2] = -g * beta;
-        m[3][3] =  g;
+        m[2][2] =  ch;
+        m[2][3] = -sh;
+        m[3][2] = -sh;
+        m[3][3] =  ch;
 
         return m;
     }

@@ -30,6 +30,17 @@ namespace Engine::Renderer {
             // Persists across frames until changed (e.g. from the UI dropdown).
             static void setProjectionModel(Engine::Math::HyperbolicProjection model);
 
+            // Orbit-camera parameters for the half-space view. Exposed live so the
+            // UI can tune framing; the hyperbolic origin maps to (0,0,1) and h is up.
+            struct HalfSpaceView {
+                float distance = 3.0f;      // eye distance from the target
+                float azimuth = 0.0f;       // degrees, around the up (h) axis
+                float elevation = 13.0f;    // degrees above the horizontal
+                float targetHeight = 0.9f;  // height (h) the camera looks at
+                float fov = 60.0f;          // vertical field of view, degrees
+            };
+            static HalfSpaceView& halfSpaceView() { return sHalfSpaceView; }
+
             // Draws a screen-covering quad; intended for post-processing passes.
             static void renderFullscreenQuad();
 
@@ -46,6 +57,7 @@ namespace Engine::Renderer {
 
             static SceneData sSceneData;
             static Engine::Math::HyperbolicProjection sProjectionModel;
+            static HalfSpaceView sHalfSpaceView;
 
             static std::vector<RenderCommand> sOpaqueCommands;
             // Reserved for the planned transparency pass; nothing submits here yet.

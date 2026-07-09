@@ -52,24 +52,41 @@ namespace Engine::Math {
         return glm::vec4(2.0f * p / denom, (1.0f + s) / denom);
     }
 
+    // ----- Upper half-space spoke -----
+    //
+    // Maps to { (a, b, h) : h > 0 } with the boundary plane at h = 0. Derived by
+    // composing hyperboloid -> Poincare -> sphere inversion at the pole; it
+    // simplifies (using x^2+y^2+z^2 = w^2-1) to a division by (w + z). The model
+    // is UNBOUNDED: as w + z -> 0 the point recedes to infinity.
+
+    inline glm::vec3 hyperboloidToHalfSpace(const glm::vec4& X) {
+        float denom = glm::max(X.w + X.z, 1e-6f); // > 0 on the upper sheet
+        return glm::vec3(X.x / denom, X.y / denom, 1.0f / denom);
+    }
+
+    inline glm::vec4 halfSpaceToHyperboloid(const glm::vec3& q) {
+        float h = glm::max(q.z, 1e-6f);
+        float r2 = q.x * q.x + q.y * q.y + h * h;
+        return glm::vec4(q.x / h, q.y / h, (1.0f - r2) / (2.0f * h), (1.0f + r2) / (2.0f * h));
+    }
+
     // ----- Hub dispatchers: hyperboloid <-> selected display model -----
 
-    // HalfSpace is not implemented yet; it falls through to Klein for now.
     inline glm::vec3 hyperboloidToModel(const glm::vec4& X, HyperbolicProjection model) {
         switch (model) {
-            case HyperbolicProjection::Poincare: return hyperboloidToPoincare(X);
+            case HyperbolicProjection::Poincare:  return hyperboloidToPoincare(X);
+            case HyperbolicProjection::HalfSpace: return hyperboloidToHalfSpace(X);
             case HyperbolicProjection::Klein:
-            case HyperbolicProjection::HalfSpace: // tmp resorts to Klein until HalfSpace is implemented
-            default:                             return hyperboloidToKlein(X);
+            default:                              return hyperboloidToKlein(X);
         }
     }
 
     inline glm::vec4 modelToHyperboloid(const glm::vec3& v, HyperbolicProjection model) {
         switch (model) {
-            case HyperbolicProjection::Poincare: return poincareToHyperboloid(v);
+            case HyperbolicProjection::Poincare:  return poincareToHyperboloid(v);
+            case HyperbolicProjection::HalfSpace: return halfSpaceToHyperboloid(v);
             case HyperbolicProjection::Klein:
-            case HyperbolicProjection::HalfSpace: // tmp resorts to Klein until HalfSpace is implemented
-            default:                             return kleinToHyperboloid(v);
+            default:                              return kleinToHyperboloid(v);
         }
     }
 

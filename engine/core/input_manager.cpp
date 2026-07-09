@@ -13,6 +13,7 @@ namespace Engine::Core {
         mWindow = window;
     }
 
+    
     void InputManager::update() {
         mPrevKeyState = mKeyState;
         for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; ++key) {

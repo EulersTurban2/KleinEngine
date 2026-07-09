@@ -8,6 +8,27 @@
 
 #include "logger.hpp"
 
+/**
+    THE WINDOW CLASS!
+
+    The Window class is responsible for creating and managing the application window using GLFW.
+    It provides methods to initialize the window, handle window updates, and manage input events.
+    The class is designed to be used in conjunction with the InputManager, Platform, Timer class.
+
+    SAMPLE USAGE:
+    #include <engine/all.hpp> // has the window class included, as well as a shorthand in preprocessing that allows you to use the Window class as "Window" instead of "Engine::Core::Window"
+    ...
+    // Create a window instance with the desired width, height, title, vsync, and fullscreen settings
+    std::unique_ptr<Engine::Core::Window> mWindow = std::make_unique<Engine::Core::Window>(800, 600, "My Application", true, false);
+    if (!mWindow->init()) {
+        LOG_CRITICAL("Failed to initialize application window.");
+        std::exit(EXIT_FAILURE);
+    }
+    ... 
+*/
+
+
+
 namespace Engine::Core {
 
     class Window {

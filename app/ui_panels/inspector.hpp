@@ -37,6 +37,7 @@ namespace App {
                 ImGui::Begin("Klein Engine Settings", nullptr, windowFlags);
 
                 drawProjectionSetting(currProj);
+                drawCameraControls(mainScene);
                 drawEntityInspector(mainScene);
                 drawEntityCreator(mainScene, previewModel, previewMat, pos, rot, scale);
                 drawModelPreviewer(previewTexID, objColor, rot, pos, scale);
@@ -58,6 +59,35 @@ namespace App {
 
                 if (changed) {
                     currentProjection = static_cast<HyperbolicProjection>(projectionIdx);
+                }
+
+                // Half-space uses its own orbit camera; expose it for live tuning.
+                if (currentProjection == HyperbolicProjection::HalfSpace) {
+                    ImGui::Spacing();
+                    ImGui::Text("Half-space Camera");
+                    auto& v = Renderer::halfSpaceView();
+                    ImGui::SliderFloat("Distance",      &v.distance,     0.5f,  15.0f);
+                    ImGui::SliderFloat("Azimuth",       &v.azimuth,   -180.0f, 180.0f);
+                    ImGui::SliderFloat("Elevation",     &v.elevation,   -5.0f,  89.0f);
+                    ImGui::SliderFloat("Target Height", &v.targetHeight, 0.0f,   3.0f);
+                    ImGui::SliderFloat("FOV",           &v.fov,         20.0f, 100.0f);
+                }
+
+                ImGui::Separator();
+            }
+
+            static void drawCameraControls(Scene& scene) {
+                Camera& cam = scene.getCamera();
+                ImGui::Text("Camera");
+
+                float speed = cam.getMovementSpeed();
+                if (ImGui::SliderFloat("Movement Speed", &speed, 0.1f, 15.0f)) {
+                    cam.setMovementSpeed(speed);
+                }
+
+                float sensitivity = cam.getMouseSensitivity();
+                if (ImGui::SliderFloat("Look Sensitivity", &sensitivity, 0.01f, 1.0f)) {
+                    cam.setMouseSensitivity(sensitivity);
                 }
 
                 ImGui::Separator();

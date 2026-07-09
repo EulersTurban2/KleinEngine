@@ -28,8 +28,12 @@ vec4 kleinToMinkowski(vec4 p){
 // Model ids match Engine::Math::HyperbolicProjection: Klein=0, Poincare=1,
 // HalfSpace=2. HalfSpace is not implemented yet and falls back to Klein.
 vec3 hyperboloidToModel(vec4 X, int model){
-    if (model == 1) return X.xyz / (X.w + 1.0); // Poincare (stereographic)
-    return X.xyz / X.w;                          // Klein     (gnomonic)
+    if (model == 1) return X.xyz / (X.w + 1.0);          // Poincare  (stereographic)
+    if (model == 2) {                                    // HalfSpace (h = 1/(w+z))
+        float denom = max(X.w + X.z, 1e-6);
+        return vec3(X.x / denom, X.y / denom, 1.0 / denom);
+    }
+    return X.xyz / X.w;                                   // Klein     (gnomonic)
 }
 
 vec4 projectToTangent(vec4 origin, vec4 target){

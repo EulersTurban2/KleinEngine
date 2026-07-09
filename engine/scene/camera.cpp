@@ -56,6 +56,8 @@ namespace Engine::Scene {
     }
 
     void Camera::processKeyboard(CameraMovement direction, float deltaTime) {
+        // Doubles as the Euclidean step and the hyperbolic boost rapidity, so
+        // movementSpeed reads as "hyperbolic distance per second".
         float velocity = mSettings.movementSpeed * deltaTime;
         glm::mat4 boost(1.0f);
         if (direction == CameraMovement::FORWARD) {

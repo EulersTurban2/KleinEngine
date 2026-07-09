@@ -55,6 +55,14 @@ namespace Engine::Scene {
 
             void handleInput(float deltaTime, const Core::Keymap& keymap);
 
+            // Movement tuning knobs. movementSpeed is hyperbolic distance per
+            // second; mouseSensitivity scales look speed. (reset() restores the
+            // values the camera was constructed with.)
+            float getMovementSpeed() const { return mSettings.movementSpeed; }
+            void setMovementSpeed(float speed) { mSettings.movementSpeed = speed; }
+            float getMouseSensitivity() const { return mSettings.mouseSensitivity; }
+            void setMouseSensitivity(float sensitivity) { mSettings.mouseSensitivity = sensitivity; }
+
         private:
             // Euclidean camera state
             glm::vec3 mFront;

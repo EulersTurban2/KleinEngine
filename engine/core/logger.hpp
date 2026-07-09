@@ -25,7 +25,7 @@ namespace Engine::Core {
             }
 
             /**
-             * @brief Sets the output stream (std::cout, std::ofstream, etc.).
+             * Sets the output stream (std::cout, std::ofstream, etc.).
              * The caller must ensure the stream stays valid for as long as the logger uses it!
              */
             void setStream(std::ostream& stream) {
@@ -68,7 +68,7 @@ namespace Engine::Core {
     };
 }
 
-// Global convenience macros
+// Convenience macros
 #define LOG_INFO(msg)     Engine::Core::Logger::get().log(msg, Engine::Core::LogLevel::Info)
 #define LOG_WARN(msg)     Engine::Core::Logger::get().log(msg, Engine::Core::LogLevel::Warning)
 #define LOG_ERROR(msg)    Engine::Core::Logger::get().log(msg, Engine::Core::LogLevel::Error)

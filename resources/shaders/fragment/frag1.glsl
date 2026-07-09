@@ -14,6 +14,7 @@ struct LightSpec {
 };
 
 uniform bool uIsHyperbolic;
+uniform int uProjectionModel; // Klein=0, Poincare=1, HalfSpace=2
 uniform vec4 uLightPos;
 uniform vec3 uLightColor;
 uniform float uLightRadius;
@@ -48,9 +49,15 @@ void main() {
 
         finalColor = (uLightSpec.diffuse * diff + spec) * uLightColor * attenuation;
 
-        float safeW = max(P.w, 1.0);
-        float trueDist = acosh(safeW);
-        gl_FragDepth = clamp(trueDist / 10.0, 0.0, 1.0);
+        if (uProjectionModel == 2) {
+            // Half-space uses a real perspective camera, so occlusion must use
+            // its projected depth rather than hyperbolic distance-from-origin.
+            gl_FragDepth = gl_FragCoord.z;
+        } else {
+            float safeW = max(P.w, 1.0);
+            float trueDist = acosh(safeW);
+            gl_FragDepth = clamp(trueDist / 10.0, 0.0, 1.0);
+        }
     } else {
         vec3 P = vFragPos.xyz;
         vec3 N = normalize(vNormal.xyz);

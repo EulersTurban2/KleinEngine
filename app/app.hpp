@@ -134,6 +134,9 @@ namespace App {
                     mainScene.update(deltaTime);
                 }
 
+                // Feed the UI-selected projection to the renderer so the vertex
+                // shaders flatten the hyperboloid with the matching model.
+                Renderer::setProjectionModel(currentProjection);
                 mainScene.draw(mWindow->getWidth(), mWindow->getHeight());
 
                 mainFramebuffer->unbind();
