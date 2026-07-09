@@ -1,8 +1,9 @@
-#ifndef __ENVIRONMENT_HPP
-#define __ENVIRONMENT_HPP
+#ifndef ENVIRONMENT_HPP
+#define ENVIRONMENT_HPP
 
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 namespace Engine::Core {
 
@@ -21,6 +22,10 @@ namespace Engine::Core {
             void bootResourceDatabase();
 
             std::string getValue(const std::string& key, const std::string& defaultValue = "") const;
+            bool getBool(const std::string& key, bool defaultValue = false) const;
+            // Returns the numbers of a JSON array value, or an empty vector if
+            // the key is missing or not an array of numbers.
+            std::vector<float> getFloatArray(const std::string& key) const;
             bool hasKey(const std::string& key) const;
 
         private:
@@ -30,6 +35,6 @@ namespace Engine::Core {
             std::unordered_map<std::string, std::string> mSettings;
     };
 
-} 
+}
 
-#endif
+#endif // ENVIRONMENT_HPP

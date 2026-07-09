@@ -1,34 +1,18 @@
-#ifndef __MODEL_LOADER_HPP
-#define __MODEL_LOADER_HPP
+#ifndef MODEL_LOADER_HPP
+#define MODEL_LOADER_HPP
 
-#include <fstream>
-#include <optional>
-#include <string_view>
-#include <unordered_map>
-#include <nlohmann/json.hpp>
+#include <memory>
+#include <string>
 
-#include "renderer/model.hpp"
-#include "renderer/shaders.hpp"
-#include "renderer/texture.hpp"
-#include "renderer/material.hpp"
+namespace Engine::Renderer {
+    class Model;
+}
 
-#include "resources/resource_cache.hpp"
-#include "resources/resource_database.hpp"
+namespace Engine::Resources {
 
-#include "scene/entity.hpp"
-
-using json = nlohmann::json;
-
-
-template<class T, class A, class S>
-using full_map = std::unordered_map<T, std::unordered_map<A, S>>;
-
-
-namespace Engine::Resources{
-    class ModelLoader{
+    class ModelLoader {
         private:
-            
-            static ModelLoader& getInstance(){
+            static ModelLoader& getInstance() {
                 static ModelLoader instance;
                 return instance;
             }
@@ -45,4 +29,4 @@ namespace Engine::Resources{
     };
 }
 
-#endif // __MODEL_LOADER_HPP
+#endif // MODEL_LOADER_HPP

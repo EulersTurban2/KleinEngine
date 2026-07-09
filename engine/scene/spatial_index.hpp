@@ -1,5 +1,5 @@
-#ifndef __SPATIAL_INDEX_HPP
-#define __SPATIAL_INDEX_HPP
+#ifndef SPATIAL_INDEX_HPP
+#define SPATIAL_INDEX_HPP
 
 #include <vector>
 #include <cstdint>

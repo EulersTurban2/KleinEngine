@@ -1,57 +1,56 @@
-#ifndef __WINDOW_HPP__
-#define __WINDOW_HPP__
+#ifndef WINDOW_HPP
+#define WINDOW_HPP
 
-#include <iostream>
+#include <string>
 #include <glad/glad.h>
 #define GLFW_INCLUDE_NONE
 #include <GLFW/glfw3.h>
 
 #include "logger.hpp"
 
-namespace Engine{
-    namespace Core{
-        class Window {
+namespace Engine::Core {
 
-            public:
-                Window(int width, int height, const std::string& title, bool vsync = false): _width(width), _height(height), _title(title), _vsync(vsync) {};
-                ~Window() {
-                    if (window)
-                    {
-                        LOG_INFO("Destroying window and releasing resources");
-                        glfwDestroyWindow(window);
-                    }
-                    glfwTerminate();
-                };
+    class Window {
+        public:
+            Window(int width, int height, const std::string& title, bool vsync = false, bool fullscreen = false)
+                : mTitle(title), mWidth(width), mHeight(height), mVsync(vsync), mFullscreen(fullscreen) {}
 
-                // zabranjujemo kopiranje prozora, jer ne zelimo da se desi da imamo 
-                // vise instanci prozora koje dele isti GLFWwindow* pointer, sto bi dovelo do problema sa resursima i stabilnoscu
-                Window(const Window&) = delete;
-                Window& operator=(const Window&) = delete;
+            ~Window() {
+                if (mWindow) {
+                    LOG_INFO("Destroying window and releasing resources");
+                    glfwDestroyWindow(mWindow);
+                }
+                glfwTerminate();
+            }
 
-                bool init();
-                void onUpdate();
-                bool shouldClose() const;
-                void processInput();
+            // Copying is forbidden: two Window instances sharing one GLFWwindow*
+            // would double-destroy the native window.
+            Window(const Window&) = delete;
+            Window& operator=(const Window&) = delete;
 
-                GLFWwindow* getNativeWindow() const;
-                int getWidth() const { return _width; }
-                int getHeight() const { return _height; }
+            bool init();
+            void onUpdate();
+            bool shouldClose() const;
 
-            private:
-                std::string _title;
-                int _width, _height;
-                GLFWwindow* window;
-                bool _vsync;
+            GLFWwindow* getNativeWindow() const;
+            int getWidth() const { return mWidth; }
+            int getHeight() const { return mHeight; }
 
-                void setCallbacks();
+        private:
+            std::string mTitle;
+            int mWidth, mHeight;
+            GLFWwindow* mWindow = nullptr;
+            bool mVsync;
+            bool mFullscreen;
 
-                // potrebnosti za callback funkcije
-                void setWidth(int width) { _width = width; }
-                void setHeight(int height) { _height = height; }
+            void setCallbacks();
 
-                static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+            // Used by the GLFW callbacks
+            void setWidth(int width) { mWidth = width; }
+            void setHeight(int height) { mHeight = height; }
 
-        };
-    }
+            static void framebuffer_size_callback(GLFWwindow* window, int width, int height);
+    };
 }
-#endif // __WINDOW_HPP__
+
+#endif // WINDOW_HPP

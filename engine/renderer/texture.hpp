@@ -1,34 +1,42 @@
-#ifndef __TEXTURE_HPP
-#define __TEXTURE_HPP
+#ifndef TEXTURE_HPP
+#define TEXTURE_HPP
 
 #include <string>
 #include <cstdint>
 #include <glad/glad.h>
-#include <stb_image.h>
 
-#include "core/logger.hpp"
+namespace Engine::Renderer {
 
-namespace Engine{
-    namespace Renderer{
-        class Texture2D{
-            public:
-                Texture2D(const std::string& path);
-                ~Texture2D();
+    enum class TextureType : uint32_t {
+        Albedo = 0,
+        Normal = 1,
+        Specular = 2,
+        Emission = 3,
+    };
 
-                void bind(uint32_t slot = 0) const;
-                void unbind() const;
+    class Texture2D {
+        public:
+            Texture2D(const std::string& path);
+            Texture2D(uint32_t width, uint32_t height);
+            ~Texture2D();
 
-                uint32_t getWidth() const;
-                uint32_t getHeight() const;
-                uint32_t getRendererID() const;
+            // Owns a GL texture handle: copying would double-delete it.
+            Texture2D(const Texture2D&) = delete;
+            Texture2D& operator=(const Texture2D&) = delete;
 
-            private:
-                uint32_t mRendererID;
-                std::string mFilePath;
-                unsigned char* mLocalBuffer;
-                int mWidth, mHeight, mBPP;
-        };
-    }
+            void bind(uint32_t slot = 0) const;
+            void unbind() const;
+
+            uint32_t getWidth() const;
+            uint32_t getHeight() const;
+            uint32_t getRendererID() const;
+
+        private:
+            uint32_t mRendererID;
+            std::string mFilePath;
+            unsigned char* mLocalBuffer;
+            int mWidth, mHeight, mBPP;
+    };
 }
 
-#endif
+#endif // TEXTURE_HPP

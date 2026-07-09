@@ -1,14 +1,18 @@
-#ifndef __MATERIAL_LOADER
-#define __MATERIAL_LOADER
+#ifndef MATERIAL_LOADER_HPP
+#define MATERIAL_LOADER_HPP
 
 #include <memory>
+#include <string>
 
-#include "renderer/material.hpp"
+namespace Engine::Renderer {
+    class Material;
+}
 
-namespace Engine::Resources{
-    class MaterialLoader{
+namespace Engine::Resources {
+
+    class MaterialLoader {
         private:
-            static MaterialLoader& getInstance(){
+            static MaterialLoader& getInstance() {
                 static MaterialLoader instance;
                 return instance;
             }
@@ -25,4 +29,4 @@ namespace Engine::Resources{
     };
 }
 
-#endif
+#endif // MATERIAL_LOADER_HPP

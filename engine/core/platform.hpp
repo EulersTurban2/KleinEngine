@@ -1,5 +1,5 @@
-#ifndef __PLATFORM_HPP
-#define __PLATFORM_HPP
+#ifndef PLATFORM_HPP
+#define PLATFORM_HPP
 
 namespace Engine {
     namespace Core {
@@ -12,7 +12,7 @@ namespace Engine {
             // Hooks into the native window to intercept OS events
             static void init(Core::Window* window);
         };
-    } 
-} 
+    }
+}
 
-#endif //__PLATFORM_HPP
+#endif // PLATFORM_HPP

@@ -1,8 +1,10 @@
-#ifndef __COMPONENTS_HPP
-#define __COMPONENTS_HPP
+#ifndef COMPONENTS_HPP
+#define COMPONENTS_HPP
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -15,7 +17,7 @@ namespace Engine::Scene {
 
     struct TransformComponent {
         glm::vec3 position = { 0.0f, 0.0f, 0.0f };
-        glm::vec3 rotation = { 0.0f, 0.0f, 0.0f };
+        glm::vec3 rotation = { 0.0f, 0.0f, 0.0f }; // Euler angles in degrees
         glm::vec3 scale    = { 1.0f, 1.0f, 1.0f };
 
         glm::mat4 getModelMatrix() const {
@@ -47,9 +49,9 @@ namespace Engine::Scene {
     // The Flat Scene Graph
     struct RelationshipComponent {
         uint32_t parent = 0;       // 0 means no parent (Root)
-        uint32_t firstChild = 0;   
-        uint32_t nextSibling = 0;  
-        uint32_t prevSibling = 0;  
+        uint32_t firstChild = 0;
+        uint32_t nextSibling = 0;
+        uint32_t prevSibling = 0;
     };
 
     struct NativeScriptComponent {
@@ -58,4 +60,4 @@ namespace Engine::Scene {
 
 }
 
-#endif
+#endif // COMPONENTS_HPP

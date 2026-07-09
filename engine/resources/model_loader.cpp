@@ -1,19 +1,21 @@
 #include "model_loader.hpp"
+#include "resources/resource_cache.hpp"
+#include "resources/resource_database.hpp"
+#include "renderer/model.hpp"
+#include "core/logger.hpp"
 
-namespace Engine::Resources{
-    std::shared_ptr<Engine::Renderer::Model>  ModelLoader::getModel(const std::string &modelName)
-    {
-        if (ResourceCache::getInstance().hasModel(modelName))
-        {
+namespace Engine::Resources {
+
+    std::shared_ptr<Engine::Renderer::Model> ModelLoader::getModel(const std::string& modelName) {
+        if (ResourceCache::getInstance().hasModel(modelName)) {
             return ResourceCache::getInstance().getModel(modelName);
         }
-        if (!ResourceDatabase::getInstance().hasModelPath(modelName))
-        {
-            LOG_ERROR("The model with that name " + modelName + " doesn't have a path"); 
+        if (!ResourceDatabase::getInstance().hasModelPath(modelName)) {
+            LOG_ERROR("The model with that name " + modelName + " doesn't have a path");
             return nullptr;
         }
         auto model = std::make_shared<Engine::Renderer::Model>(ResourceDatabase::getInstance().getModelPath(modelName));
-        ResourceCache::getInstance().addModel(modelName,model);
+        ResourceCache::getInstance().addModel(modelName, model);
         return model;
     }
 }

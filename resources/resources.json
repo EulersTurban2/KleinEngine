@@ -14,7 +14,7 @@
                         "albedo" : "../resources/materials/default/awesomeface.png"
                     },
                     "lightSpec" : {
-                        "ambient" : 0.5,
+                        "ambient" : 0.05,
                         "diffuse" : 1.0,
                         "specular" : 32.0
                     }
@@ -25,11 +25,11 @@
                         "fragment" : "../resources/shaders/fragment/lightfrag1.glsl"
                     },
                     "textures" : {
-                        
+
                     },
                     "lightSourceSpec" : {
-                        "color" : [1.0, 1.0, 1.0],
-                        "intensity" : 15.0,                        
+                        "color" : [1.0, 0.6, 0.3],
+                        "intensity" : 100.0,
                         "emission_strength" : 5.0
                     }
                 }
@@ -44,7 +44,7 @@
             "lightSource" : {
                 "model" : "cube",
                 "material" : "lightDefault",
-                "name" : "light_sourcer"
+                "name" : "light_source"
             }
         }
     }

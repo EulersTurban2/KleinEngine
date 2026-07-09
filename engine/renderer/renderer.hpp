@@ -1,5 +1,5 @@
-#ifndef __RENDERER_HPP
-#define __RENDERER_HPP
+#ifndef RENDERER_HPP
+#define RENDERER_HPP
 
 #include <vector>
 #include <memory>
@@ -9,6 +9,7 @@
 #include "renderer/material.hpp"
 
 namespace Engine::Renderer {
+
     struct RenderCommand {
         std::shared_ptr<Model> model;
         std::shared_ptr<Material> material;
@@ -20,17 +21,20 @@ namespace Engine::Renderer {
     class Renderer {
         public:
             static void init();
-            static void beginScene(const Camera::Camera& camera, const float screenWidth, const float screenHeight);
+            static void beginScene(const Scene::Camera& camera, float screenWidth, float screenHeight);
             static void submit(std::shared_ptr<Model> model, std::shared_ptr<Material> material, const glm::mat4& transformMatrix);
             static void endScene();
-        private:
 
+            // Draws a screen-covering quad; intended for post-processing passes.
+            static void renderFullscreenQuad();
+
+        private:
             struct SceneData {
+                glm::mat4 viewMatrix;
                 glm::mat4 projectionMatrix;
-                glm::mat4 viewProjectionMatrix;
                 glm::vec3 cameraPosition;
-                bool isHyperbolic;
-                const Engine::Camera::Camera* cam;
+                bool isHyperbolic = false;
+                const Scene::Camera* cam = nullptr;
             };
 
             static void flush();
@@ -38,8 +42,9 @@ namespace Engine::Renderer {
             static SceneData sSceneData;
 
             static std::vector<RenderCommand> sOpaqueCommands;
+            // Reserved for the planned transparency pass; nothing submits here yet.
             static std::vector<RenderCommand> sTransparentCommands;
     };
 }
 
-#endif
+#endif // RENDERER_HPP

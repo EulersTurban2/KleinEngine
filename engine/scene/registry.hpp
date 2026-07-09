@@ -1,12 +1,11 @@
-#ifndef __REGISTRY_HPP
-#define __REGISTRY_HPP
+#ifndef REGISTRY_HPP
+#define REGISTRY_HPP
 
 #include <cstdint>
 #include <unordered_map>
 #include <memory>
 #include <typeindex>
 #include <vector>
-
 
 namespace Engine::Scene {
 
@@ -15,7 +14,6 @@ namespace Engine::Scene {
             virtual ~IComponentArray() = default;
             virtual void entityDestroyed(uint32_t entity) = 0;
     };
-
 
     template<typename T>
     class ComponentArray : public IComponentArray {
@@ -28,8 +26,10 @@ namespace Engine::Scene {
                 mComponentData.erase(entity);
             }
 
+            // Throws std::out_of_range if the entity lacks this component;
+            // check hasEntity first.
             T& getData(uint32_t entity) {
-                return mComponentData[entity];
+                return mComponentData.at(entity);
             }
 
             bool hasEntity(uint32_t entity) const {
@@ -45,34 +45,32 @@ namespace Engine::Scene {
 
     class Registry {
         public:
-
             Registry() : mNextEntityId(1) {}
 
-            uint32_t createEntity() {return mNextEntityId++;}
+            // Entity id 0 is reserved as the "no entity" value.
+            uint32_t createEntity() { return mNextEntityId++; }
 
             template<typename T>
-            void addComponent(uint32_t entity, T component){
+            void addComponent(uint32_t entity, T component) {
                 getComponentArray<T>()->insertData(entity, component);
             }
 
             template<typename T>
-            T& getComponent(uint32_t entity){
+            T& getComponent(uint32_t entity) {
                 return getComponentArray<T>()->getData(entity);
             }
 
             template<typename T>
-            bool hasComponent(uint32_t entity){
+            bool hasComponent(uint32_t entity) {
                 return getComponentArray<T>()->hasEntity(entity);
             }
 
             template<typename T>
-            std::vector<uint32_t> view(){
+            std::vector<uint32_t> view() {
                 std::vector<uint32_t> entities;
                 auto array = getComponentArray<T>();
-                for (uint32_t i = 0; i < mNextEntityId; ++i)
-                {
-                    if (array->hasEntity(i))
-                    {
+                for (uint32_t i = 1; i < mNextEntityId; ++i) {
+                    if (array->hasEntity(i)) {
                         entities.push_back(i);
                     }
                 }
@@ -82,19 +80,16 @@ namespace Engine::Scene {
         private:
             uint32_t mNextEntityId;
             std::unordered_map<std::type_index, std::shared_ptr<IComponentArray>> mComponentArrays;
-    
+
             template<typename T>
-            std::shared_ptr<ComponentArray<T>> getComponentArray(){
+            std::shared_ptr<ComponentArray<T>> getComponentArray() {
                 std::type_index typeName = std::type_index(typeid(T));
-                if (mComponentArrays.find(typeName) == mComponentArrays.end())
-                {
+                if (mComponentArrays.find(typeName) == mComponentArrays.end()) {
                     mComponentArrays[typeName] = std::make_shared<ComponentArray<T>>();
                 }
                 return std::static_pointer_cast<ComponentArray<T>>(mComponentArrays[typeName]);
             }
-
     };
-
 }
 
-#endif
+#endif // REGISTRY_HPP

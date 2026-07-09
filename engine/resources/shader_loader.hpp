@@ -1,17 +1,17 @@
-#ifndef __SHADER_LOADER_HPP
-#define __SHADER_LOADER_HPP
+#ifndef SHADER_LOADER_HPP
+#define SHADER_LOADER_HPP
 
-#include <string>
 #include <memory>
+#include <string>
 
-#include "renderer/shaders.hpp"
-#include "resources/resource_cache.hpp"
-#include "resources/resource_database.hpp"
+namespace Engine::Renderer {
+    class ShaderProgram;
+}
 
 namespace Engine::Resources {
+
     class ShaderLoader {
         private:
-            
             static ShaderLoader& getInstance() {
                 static ShaderLoader instance;
                 return instance;
@@ -30,4 +30,4 @@ namespace Engine::Resources {
     };
 }
 
-#endif // __SHADER_LOADER_HPP
+#endif // SHADER_LOADER_HPP

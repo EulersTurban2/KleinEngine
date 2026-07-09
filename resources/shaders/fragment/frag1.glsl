@@ -3,25 +3,31 @@
 #include <klein>
 
 in vec4 vFragPos;
-in vec4 vNormal; 
-in vec2 vTexCoords; // NEW: Added UV input
+in vec4 vNormal;
+in vec2 vTexCoords;
+
+// Surface light response, fed from the material's lightSpec (resources.json)
+struct LightSpec {
+    float ambient;
+    float diffuse;
+    float specular; // shininess exponent
+};
 
 uniform bool uIsHyperbolic;
-uniform vec4 uLightPos; 
+uniform vec4 uLightPos;
 uniform vec3 uLightColor;
-uniform vec4 cameraPos;
 uniform float uLightRadius;
+uniform LightSpec uLightSpec;
 
-// NEW: The Albedo texture sampler
-uniform sampler2D u_AlbedoMap; 
+uniform sampler2D uAlbedoMap;
 
 out vec4 FragColor;
 
 void main() {
     vec3 finalColor = vec3(0.0);
-    
+
     // Sample the albedo texture
-    vec3 albedo = texture(u_AlbedoMap, vTexCoords).rgb;
+    vec3 albedo = texture(uAlbedoMap, vTexCoords).rgb;
 
     if (uIsHyperbolic) {
         vec4 P = normalizePositionM(vFragPos);
@@ -37,10 +43,10 @@ void main() {
         float attenuation = attenuationMinkowski(dist, 20 * uLightRadius);
 
         float diff = max(0.0, dotMinkowski(N, L));
-        vec4 H = normalizeVectorM(L + V); 
-        float spec = pow(max(0.0, dotMinkowski(N, H)), 32.0);
-        
-        finalColor = (diff + spec) * uLightColor * attenuation;
+        vec4 H = normalizeVectorM(L + V);
+        float spec = pow(max(0.0, dotMinkowski(N, H)), uLightSpec.specular);
+
+        finalColor = (uLightSpec.diffuse * diff + spec) * uLightColor * attenuation;
 
         float safeW = max(P.w, 1.0);
         float trueDist = acosh(safeW);
@@ -49,24 +55,24 @@ void main() {
         vec3 P = vFragPos.xyz;
         vec3 N = normalize(vNormal.xyz);
         if (dot(N, P) > 0.0) { N = -N; }
-        
+
         vec3 L = normalize(uLightPos.xyz - P);
         vec3 V = normalize(-P);
-        
+
         float dist = length(uLightPos.xyz - P);
         float attenuation = clamp(1.0 - (dist / uLightRadius), 0.0, 1.0);
-        attenuation *= attenuation; 
-        
+        attenuation *= attenuation;
+
         float diff = max(dot(N, L), 0.0);
         vec3 H = normalize(L + V);
-        float spec = pow(max(dot(N, H), 0.0), 32.0);
-        
-        finalColor = (diff + spec) * uLightColor * attenuation;
+        float spec = pow(max(dot(N, H), 0.0), uLightSpec.specular);
+
+        finalColor = (uLightSpec.diffuse * diff + spec) * uLightColor * attenuation;
         gl_FragDepth = gl_FragCoord.z;
     }
 
-    vec3 ambient = vec3(0.05); 
-    
+    vec3 ambient = vec3(uLightSpec.ambient);
+
     // Final color combines ambient + dynamic lighting, multiplied by the texture albedo
     FragColor = vec4(albedo * (finalColor + ambient), 1.0);
 }

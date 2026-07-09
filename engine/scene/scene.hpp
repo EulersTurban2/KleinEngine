@@ -1,5 +1,5 @@
-#ifndef __SCENE_HPP
-#define __SCENE_HPP
+#ifndef SCENE_HPP
+#define SCENE_HPP
 
 #include <memory>
 #include <string>
@@ -9,11 +9,11 @@
 
 namespace Engine::Scene {
 
-    class Entity; 
+    class Entity;
 
     class Scene {
     public:
-        explicit Scene(Camera::Camera& cam);
+        explicit Scene(Camera& cam);
         ~Scene() = default;
 
         Entity createEntity(const std::string& name = "Entity");
@@ -24,14 +24,14 @@ namespace Engine::Scene {
         void setSpatialIndex(std::unique_ptr<SpatialIndex> index);
         SpatialIndex* getSpatialIndex() const { return mSpatialIndex.get(); }
 
-        Registry& getRegistry() { return m_Registry; }
-        Camera::Camera& getCamera() { return mCamera; }
+        Registry& getRegistry() { return mRegistry; }
+        Camera& getCamera() { return mCamera; }
 
     private:
-        Camera::Camera& mCamera;
-        Registry m_Registry;
+        Camera& mCamera;
+        Registry mRegistry;
         std::unique_ptr<SpatialIndex> mSpatialIndex;
     };
 }
 
-#endif
+#endif // SCENE_HPP

@@ -1,43 +1,42 @@
-#ifndef __MESH_HPP
-#define __MESH_HPP
+#ifndef MESH_HPP
+#define MESH_HPP
 
 #include <glm/glm.hpp>
 #include <vector>
-#include <string>
 
-#include "renderer/shaders.hpp"
+namespace Engine::Renderer {
 
-namespace Engine{
-    namespace Renderer{
-        struct Vertex {
-            glm::vec3 position;
-            glm::vec3 normal;
-            glm::vec2 texCoords;
-            glm::vec3 tangent;
-            glm::vec3 bitangent;
-        };
+    struct Vertex {
+        glm::vec3 position{0.0f};
+        glm::vec3 normal{0.0f};
+        glm::vec2 texCoords{0.0f};
+        glm::vec3 tangent{0.0f};
+        glm::vec3 bitangent{0.0f};
+    };
 
-        class Mesh{
-            public:
-                Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
-                ~Mesh();
+    class Mesh {
+        public:
+            Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
+            ~Mesh();
 
-                Mesh (const Mesh&) = delete;
-                Mesh& operator=(const Mesh&) = delete;
+            Mesh(const Mesh&) = delete;
+            Mesh& operator=(const Mesh&) = delete;
 
-                Mesh (Mesh&&) noexcept;
-                Mesh& operator=(Mesh&&) noexcept;
+            Mesh(Mesh&&) noexcept;
+            Mesh& operator=(Mesh&&) noexcept;
 
-                void draw(const Renderer::ShaderProgram& shader) const;
-            private:
-                // Data
-                std::vector<Vertex> m_vertices;
-                std::vector<unsigned int> m_indices;
-                // Render data
-                unsigned int VAO = 0, VBO = 0, EBO = 0;
-                void setupMesh();
-        };
-    }
+            // Issues the draw call; the caller is responsible for binding the
+            // shader and its uniforms beforehand.
+            void draw() const;
+
+        private:
+            // Data
+            std::vector<Vertex> mVertices;
+            std::vector<unsigned int> mIndices;
+            // Render data
+            unsigned int mVAO = 0, mVBO = 0, mEBO = 0;
+            void setupMesh();
+    };
 }
 
-#endif // __MESH_HPP
+#endif // MESH_HPP

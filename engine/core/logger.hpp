@@ -1,89 +1,77 @@
-#ifndef __LOGGER_HPP
-#define __LOGGER_HPP
-
-#define _POSIX_C_SOURCE 200809L
+#ifndef LOGGER_HPP
+#define LOGGER_HPP
 
 #include <iostream>
-#include <fstream>
-#include <time.h>
+#include <string>
+#include <ctime>
 
-namespace Engine{
-    namespace Core{
+namespace Engine::Core {
 
-        enum LOG_LEVEL {
-            INFO = 0,
-            WARNING = 1,
-            ERROR = 2,
-            CRITICAL = 3
-        };
+    // Critical means "unrecoverable for the subsystem that logged it"; the
+    // logger itself never terminates the process — callers decide how to react.
+    enum class LogLevel {
+        Info = 0,
+        Warning = 1,
+        Error = 2,
+        Critical = 3
+    };
 
-        class Logger {
-            public:
-               // Access the one and only instance
-                static Logger& get() {
-                    static Logger instance; 
-                    return instance;
+    class Logger {
+        public:
+            // Access the one and only instance
+            static Logger& get() {
+                static Logger instance;
+                return instance;
+            }
+
+            /**
+             * @brief Sets the output stream (std::cout, std::ofstream, etc.).
+             * The caller must ensure the stream stays valid for as long as the logger uses it!
+             */
+            void setStream(std::ostream& stream) {
+                mStream = &stream;
+            }
+
+            // Copying is forbidden: we want a single global logger.
+            Logger(const Logger&) = delete;
+            Logger& operator=(const Logger&) = delete;
+
+            void log(const std::string& msg, LogLevel level) {
+                std::ostream& out = mStream ? *mStream : std::cout;
+                const std::string levelStr = getLevelString(level);
+
+                std::time_t now = std::time(nullptr);
+                char timeStr[32] = {};
+                std::strftime(timeStr, sizeof(timeStr), "%a %b %d %H:%M:%S %Y", std::localtime(&now));
+
+                out << "[" << levelStr << "][" << timeStr << "]: " << msg << std::endl;
+                if (out.rdbuf() != std::cout.rdbuf()) {
+                    std::cout << "[" << levelStr << "][" << timeStr << "]: " << msg << std::endl;
                 }
+            }
 
-                /**
-                 * @brief Postavlja izlazni stream (std::cout, std::ofstream, etc.)
-                 * Korisnik mora da osigura da stream ostane validan toko cijelog vremena koriscenja loggera!
-                 */
-                void setStream(std::ostream& stream) {
-                    _log_file = &stream;
+        private:
+            std::string getLevelString(LogLevel level) {
+                switch (level) {
+                    case LogLevel::Info:     return "INFO";
+                    case LogLevel::Warning:  return "WARNING";
+                    case LogLevel::Error:    return "ERROR";
+                    case LogLevel::Critical: return "CRITICAL";
+                    default:                 return "LOG";
                 }
+            }
 
-                // zabranjujemo kopiranje loggera, jer ne zelimo vise instance loggera
-                // zelimo jedan globalan logger koji ce voditi racuna o svemu
-                Logger(const Logger&) = delete;
-                Logger& operator=(const Logger&) = delete;
+            Logger() : mStream(nullptr) {}
+            ~Logger() = default;
 
-                void log(const std::string& msg, LOG_LEVEL level){
-                    std::ostream& out = _log_file ? *_log_file : std::cout;
-                    std::string level_str = getLevelString(level);
-                    
-                    // biljezimo vrijeme
-                    time_t now = time(NULL);
-                    char time_str[26];
-                    ctime_r(&now, time_str);
-
-                    std::string tstr_trimmed(time_str);
-                    tstr_trimmed.pop_back(); // uklanjamo newline karakter sa kraja
-                    out << "[" << level_str << "][" << tstr_trimmed << "]: " << msg << std::endl;
-                    if(out.rdbuf() != std::cout.rdbuf()){
-                        std::cout << "[" << level_str << "][" << tstr_trimmed << "]: " << msg << std::endl;
-                    }
-                    if(level == LOG_LEVEL::CRITICAL){
-                        out << "Critical error encountered. Terminating application." << std::endl;
-                        exit(EXIT_FAILURE);
-                    }
-                }
-            
-            private:
-
-                std::string getLevelString(LOG_LEVEL level) {
-                    switch (level) {
-                        case LOG_LEVEL::INFO:       return "INFO";
-                        case LOG_LEVEL::WARNING:    return "WARNING";
-                        case LOG_LEVEL::ERROR:      return "ERROR";
-                        case LOG_LEVEL::CRITICAL :  return "CRITICAL";
-                        default:                    return "LOG";
-                    }
-                }
-
-                Logger(): _log_file(nullptr) {}; // Private constructor
-                ~Logger() = default;
-
-                std::ostream* _log_file;
-
-        };
-    }
+            std::ostream* mStream;
+    };
 }
 
 // Global convenience macros
-#define LOG_INFO(msg)     Engine::Core::Logger::get().log(msg, Engine::Core::LOG_LEVEL::INFO)
-#define LOG_WARN(msg)     Engine::Core::Logger::get().log(msg, Engine::Core::LOG_LEVEL::WARNING)
-#define LOG_ERROR(msg)    Engine::Core::Logger::get().log(msg, Engine::Core::LOG_LEVEL::ERROR)
-#define LOG_CRITICAL(msg) Engine::Core::Logger::get().log(msg, Engine::Core::LOG_LEVEL::CRITICAL)
+#define LOG_INFO(msg)     Engine::Core::Logger::get().log(msg, Engine::Core::LogLevel::Info)
+#define LOG_WARN(msg)     Engine::Core::Logger::get().log(msg, Engine::Core::LogLevel::Warning)
+#define LOG_ERROR(msg)    Engine::Core::Logger::get().log(msg, Engine::Core::LogLevel::Error)
+#define LOG_CRITICAL(msg) Engine::Core::Logger::get().log(msg, Engine::Core::LogLevel::Critical)
 
-#endif // __LOGGER_HPP
+#endif // LOGGER_HPP

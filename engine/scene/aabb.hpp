@@ -1,9 +1,11 @@
-#ifndef __AABB_HPP
-#define __AABB_HPP
+#ifndef AABB_HPP
+#define AABB_HPP
 
+#include <cmath>
 #include <glm/glm.hpp>
 
 namespace Engine::Scene {
+
     struct AABB {
         glm::vec3 center;
         glm::vec3 halfExtent;
@@ -21,4 +23,5 @@ namespace Engine::Scene {
         }
     };
 }
-#endif
+
+#endif // AABB_HPP

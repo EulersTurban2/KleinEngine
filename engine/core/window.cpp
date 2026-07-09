@@ -1,72 +1,67 @@
-#include <core/window.hpp>
-#include <core/platform.hpp>
 #include "window.hpp"
+#include "platform.hpp"
 
-namespace Engine{
-    namespace Core {
-        bool Window::init(){
-            // postavljanje opengl specifikacije
-            glfwInit();
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR,3);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
-            glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
-    
-            LOG_INFO("Creating window with title: " + _title + ", width: " + std::to_string(_width) + ", height: " + std::to_string(_height));
-            this->window = glfwCreateWindow(_width,_height,_title.c_str(),NULL,NULL);
-            if (this->window == NULL)
-            {
-                glfwTerminate();
-                LOG_CRITICAL("Error in allocating window resources");
-            }
-            LOG_INFO("Window created successfully");
-            LOG_INFO("Setting up OpenGL context and loading OpenGL functions with GLAD");
-            glfwMakeContextCurrent(this->window);
-            // setting up GLAD
-            if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-            {
-                LOG_CRITICAL("Failed to initialize GLAD");
-            }   
-            LOG_INFO("GLAD initialized successfully");
+namespace Engine::Core {
 
-            setCallbacks();
-            Platform::PlatformManager::init(this);
-            glfwSwapInterval(_vsync ? 1 : 0);
-            
-            return true;
+    bool Window::init() {
+        // Request the OpenGL 3.3 core profile
+        if (!glfwInit()) {
+            LOG_CRITICAL("Failed to initialize GLFW");
+            return false;
         }
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        void Window::onUpdate()
-        {
-            glfwPollEvents();
-            glfwSwapBuffers(this->window);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        LOG_INFO("Creating window with title: " + mTitle + ", width: " + std::to_string(mWidth) + ", height: " + std::to_string(mHeight));
+        GLFWmonitor* monitor = mFullscreen ? glfwGetPrimaryMonitor() : nullptr;
+        mWindow = glfwCreateWindow(mWidth, mHeight, mTitle.c_str(), monitor, nullptr);
+        if (mWindow == nullptr) {
+            LOG_CRITICAL("Error in allocating window resources");
+            glfwTerminate();
+            return false;
         }
-        bool Window::shouldClose() const
-        {
-            return glfwWindowShouldClose(this->window);
+        LOG_INFO("Window created successfully");
+        LOG_INFO("Setting up OpenGL context and loading OpenGL functions with GLAD");
+        glfwMakeContextCurrent(mWindow);
+        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+            LOG_CRITICAL("Failed to initialize GLAD");
+            return false;
         }
-        GLFWwindow *Window::getNativeWindow() const
-        {
-            return window;
-        }
-        void Window::processInput()
-        {
-            if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-                LOG_INFO("Escape key pressed. Closing window.");
-                glfwSetWindowShouldClose(window, true);
-            }
-        }
-        void Window::setCallbacks()
-        {
-            glfwSetFramebufferSizeCallback(this->window,framebuffer_size_callback);
-        }
-        void Window::framebuffer_size_callback(GLFWwindow* window, int width, int height)
-        {
-            Window* win = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        LOG_INFO("GLAD initialized successfully");
+
+        glfwSetWindowUserPointer(mWindow, this);
+        setCallbacks();
+        Platform::PlatformManager::init(this);
+        glfwSwapInterval(mVsync ? 1 : 0);
+
+        return true;
+    }
+
+    void Window::onUpdate() {
+        glfwSwapBuffers(mWindow);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    }
+
+    bool Window::shouldClose() const {
+        return glfwWindowShouldClose(mWindow);
+    }
+
+    GLFWwindow* Window::getNativeWindow() const {
+        return mWindow;
+    }
+
+    void Window::setCallbacks() {
+        glfwSetFramebufferSizeCallback(mWindow, framebuffer_size_callback);
+    }
+
+    void Window::framebuffer_size_callback(GLFWwindow* window, int width, int height) {
+        Window* win = static_cast<Window*>(glfwGetWindowUserPointer(window));
+        if (win) {
             win->setWidth(width);
             win->setHeight(height);
-            glViewport(0,0,width,height);
-            LOG_INFO("Framebuffer resized: new width = " + std::to_string(width) + ", new height = " + std::to_string(height));
         }
+        glViewport(0, 0, width, height);
+        LOG_INFO("Framebuffer resized: new width = " + std::to_string(width) + ", new height = " + std::to_string(height));
     }
 }

@@ -1,5 +1,5 @@
-#ifndef __ENTITY_HPP
-#define __ENTITY_HPP
+#ifndef ENTITY_HPP
+#define ENTITY_HPP
 
 #include <cstdint>
 #include <utility>
@@ -8,15 +8,13 @@
 
 namespace Engine::Scene {
 
-    class Scene; 
-
     class Entity {
     public:
         Entity() = default;
         Entity(uint32_t handle, Scene* scene) : mEntityHandle(handle), mScene(scene) {}
 
         template<typename T, typename... Args>
-        T& addComponent(Args&&... args){
+        T& addComponent(Args&&... args) {
             mScene->getRegistry().addComponent<T>(mEntityHandle, T{std::forward<Args>(args)...});
             return getComponent<T>();
         }
@@ -34,9 +32,9 @@ namespace Engine::Scene {
         uint32_t getId() const { return mEntityHandle; }
 
     private:
-        uint32_t mEntityHandle = 0; 
+        uint32_t mEntityHandle = 0;
         Scene* mScene = nullptr;
     };
 }
 
-#endif 
+#endif // ENTITY_HPP

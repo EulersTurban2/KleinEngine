@@ -1,73 +1,52 @@
 #include "input_manager.hpp"
 
-namespace Engine{
-    namespace Core{
-        GLFWwindow* InputManager::m_window = nullptr;
-        std::unordered_map<int, bool> InputManager::m_keyState;
-        std::unordered_map<int, bool> InputManager::m_prevKeyState;
-        glm::vec2 InputManager::m_mousePosition(0.0f);
-        glm::vec2 InputManager::m_prevMousePosition(0.0f);
-        bool InputManager::m_firstMouse = true;
+namespace Engine::Core {
 
-        void InputManager::init(GLFWwindow* window){
-            m_window = window;
-            glfwSetInputMode(m_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+    GLFWwindow* InputManager::mWindow = nullptr;
+    std::unordered_map<int, bool> InputManager::mKeyState;
+    std::unordered_map<int, bool> InputManager::mPrevKeyState;
+    glm::vec2 InputManager::mMousePosition(0.0f);
+    glm::vec2 InputManager::mPrevMousePosition(0.0f);
+    bool InputManager::mFirstMouse = true;
+
+    void InputManager::init(GLFWwindow* window) {
+        mWindow = window;
+    }
+
+    void InputManager::update() {
+        mPrevKeyState = mKeyState;
+        for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; ++key) {
+            mKeyState[key] = glfwGetKey(mWindow, key) == GLFW_PRESS;
         }
 
-        void InputManager::keyCallback(int key, int action){
-            if (action == 1) {
-                m_keyState[key] = true;
-            } else if (action == 0) {
-                m_keyState[key] = false;
-            }
+        mPrevMousePosition = mMousePosition;
+        double x, y;
+        glfwGetCursorPos(mWindow, &x, &y);
+        mMousePosition = glm::vec2(x, y);
+        if (mFirstMouse) {
+            mPrevMousePosition = mMousePosition;
+            mFirstMouse = false;
         }
+        glfwPollEvents();
+    }
 
-        void InputManager::mouseCallback(double xpos, double ypos){
-            m_mousePosition.x = static_cast<float>(xpos);
-            m_mousePosition.y = static_cast<float>(ypos);
+    bool InputManager::isKeyPressed(int key) {
+        return mKeyState[key] && !mPrevKeyState[key];
+    }
 
-            if (m_firstMouse) {
-                m_prevMousePosition = m_mousePosition;
-                m_firstMouse = false;
-            }
-        }
+    bool InputManager::isKeyReleased(int key) {
+        return !mKeyState[key] && mPrevKeyState[key];
+    }
 
-        void InputManager::Update(){
-            m_prevKeyState = m_keyState;
-            for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; ++key){
-                m_keyState[key] = glfwGetKey(m_window, key) == GLFW_PRESS;
-            }
+    bool InputManager::isKeyDown(int key) {
+        return mKeyState[key];
+    }
 
-            m_prevMousePosition = m_mousePosition;
-            double x, y;
-            glfwGetCursorPos(m_window, &x, &y);
-            m_mousePosition = glm::vec2(x, y);
-            if (m_firstMouse)
-            {
-                m_prevMousePosition = m_mousePosition;
-                m_firstMouse = false;
-            }
-        }
+    glm::vec2 InputManager::getMousePosition() {
+        return mMousePosition;
+    }
 
-        bool InputManager::isKeyPressed(int key){
-            return m_keyState[key] && !m_prevKeyState[key];
-        }
-
-        bool InputManager::isKeyReleased(int key){
-            return !m_keyState[key] && m_prevKeyState[key];
-        }
-
-        bool InputManager::isKeyDown(int key){
-            return m_keyState[key];
-        }
-
-        glm::vec2 InputManager::getMousePosition(){
-            return m_mousePosition;
-        }
-
-        glm::vec2 InputManager::getMouseDelta(){
-            return m_mousePosition - m_prevMousePosition;
-        }
-
+    glm::vec2 InputManager::getMouseDelta() {
+        return mMousePosition - mPrevMousePosition;
     }
 }

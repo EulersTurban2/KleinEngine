@@ -1,17 +1,25 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec4 vFragPos; // You'll need to pass this from vertex shader
+in vec4 vFragPos;
+
+// Fed from the material's lightSourceSpec (resources.json)
+struct LightSourceSpec {
+    vec3 color;
+    float intensity;
+    float emission_strength;
+};
+
 uniform bool uIsHyperbolic;
+uniform LightSourceSpec uLightSourceSpec;
 
 void main() {
-    FragColor = vec4(1.0, 1.0, 1.0, 1.0); // Pure white glow
+    FragColor = vec4(uLightSourceSpec.color * uLightSourceSpec.intensity, 1.0);
 
     if (uIsHyperbolic) {
-        // Ensure the light source object depth matches the world depth logic
         float safeW = max(vFragPos.w, 1.0);
         float trueDist = acosh(safeW);
-        gl_FragDepth = clamp(trueDist / 10, 0.0, 1.0);
+        gl_FragDepth = clamp(trueDist / 10.0, 0.0, 1.0);
     } else {
         gl_FragDepth = gl_FragCoord.z;
     }

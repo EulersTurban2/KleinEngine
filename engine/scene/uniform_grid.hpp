@@ -1,16 +1,21 @@
-#ifndef __UNIFORM_GRID_HPP
-#define __UNIFORM_GRID_HPP
+#ifndef UNIFORM_GRID_HPP
+#define UNIFORM_GRID_HPP
 
 #include "spatial_index.hpp"
+#include <cmath>
 #include <unordered_map>
 
-struct CellHash {
-    std::size_t operator()(const glm::ivec3& v) const {
-        return ((std::hash<float>()(v.x) ^ (std::hash<float>()(v.y) << 1)) >> 1) ^ (std::hash<float>()(v.z) << 1);
-    }
-};
-
 namespace Engine::Scene {
+
+    struct CellHash {
+        std::size_t operator()(const glm::ivec3& v) const {
+            std::size_t h = std::hash<int>()(v.x);
+            h ^= std::hash<int>()(v.y) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            h ^= std::hash<int>()(v.z) + 0x9e3779b9 + (h << 6) + (h >> 2);
+            return h;
+        }
+    };
+
     class UniformGrid : public SpatialIndex {
     public:
         explicit UniformGrid(float cellSize = 2.0f) : mCellSize(cellSize) {}
@@ -18,7 +23,7 @@ namespace Engine::Scene {
         void insert(uint32_t entity, const glm::vec3& position) override;
         void remove(uint32_t entity) override;
         void update(uint32_t entity, const glm::vec3& position) override;
-        
+
         std::vector<uint32_t> query(const glm::vec3& position, float radius) override;
         void clear() override { mCells.clear(); mEntityCellMap.clear(); }
 
@@ -28,11 +33,11 @@ namespace Engine::Scene {
         std::unordered_map<glm::ivec3, std::vector<SpatialItem>, CellHash> mCells;
 
         glm::ivec3 getCellCoords(const glm::vec3& pos) const {
-            return { std::floor(pos.x / mCellSize), 
-                     std::floor(pos.y / mCellSize), 
-                     std::floor(pos.z / mCellSize) };
+            return { static_cast<int>(std::floor(pos.x / mCellSize)),
+                     static_cast<int>(std::floor(pos.y / mCellSize)),
+                     static_cast<int>(std::floor(pos.z / mCellSize)) };
         }
     };
 }
 
-#endif
+#endif // UNIFORM_GRID_HPP

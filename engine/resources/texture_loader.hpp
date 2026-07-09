@@ -1,17 +1,15 @@
-#ifndef __TEXTURE_LOADER_HPP
-#define __TEXTURE_LOADER_HPP
+#ifndef TEXTURE_LOADER_HPP
+#define TEXTURE_LOADER_HPP
 
-#include <string>
 #include <memory>
+#include <string>
 
 #include "renderer/texture.hpp"
-#include "resources/resource_cache.hpp"
-#include "resources/resource_database.hpp"
 
 namespace Engine::Resources {
+
     class TextureLoader {
         private:
-            
             static TextureLoader& getInstance() {
                 static TextureLoader instance;
                 return instance;
@@ -30,4 +28,4 @@ namespace Engine::Resources {
     };
 }
 
-#endif // __TEXTURE_LOADER_HPP
+#endif // TEXTURE_LOADER_HPP
